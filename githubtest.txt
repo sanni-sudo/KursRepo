@@ -1,1 +1,2 @@
 Detta är en testfil
+Detta är en ny rad för att testa synkningen med Github!
