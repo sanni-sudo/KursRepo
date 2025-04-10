@@ -6,6 +6,7 @@
 
 readonly LOG_FILE="$HOME/file_sentry.log"
 readonly TEMP_FILE="/tmp/file_sentry_$$.tmp"
+SIZE_THRESHOLD="${2:-1048576}"
 readonly SIZE_THRESHOLD=1048576
 readonly TARGET_DIR="$1"
 
@@ -49,23 +50,34 @@ find "$TARGET_DIR" -type f -exec stat -c "%s %A %n" {} \; > "$TEMP_FILE"
 
 #Analysera varje fil
 while read -r size perms name; do 
+    is_suspect=0
 
 #Kontrollera storlek
 if (( size > SIZE_THRESHOLD )); then
 log_message "WARNING" "Stor fil:$name ($size bytes)"
 echo "Varning: $name är över $SIZE_THRESHOLD bytes!" >&2
+is_suspect=1
 fi
 
 #Kontrollera körbara rättigheter
 if [[ "$perms" =~ x ]]; then
 log_message "WARNING" "Körbar fil: $name ($perms)"
 echo "Varning: $name är körbar!" >&2
+is_suspect=1
 fi
+
+if (( is_suspect == 1 )); then
+    ((suspect_count++))
+fi
+
 done < "$TEMP_FILE"
 #Find listar alla filer ( -type f) och stat ger storlek, rättigheter och namn
 #Loopen läser varje rad och använder villkor för att flagga misstänkta filer
 
 #Lägg till avslutande kod:
 log_message "INFO" "Skanning klar."
+log_message "INFO" "Antal misstänkta filer: $suspect_count"
+echo "Total andtal misstänkta filer: $suspect_count"
+
 rm -f "$TEMP_FILE"
 #trap rensar redan vid avbrott, men vi gör det här för normal avslutning
