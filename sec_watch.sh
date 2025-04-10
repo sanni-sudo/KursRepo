@@ -11,33 +11,44 @@
 readonly SYSLOG_FILE="/var/log/syslog"
 readonly AUTHLOG_FILE="/var/log/auth.log"
 readonly REPORT_FILE="security_report_$(date +%Y%m%d).txt"
+readonly TMP_FILE="/tmp/sec_watch_$$.tmp"
 readonly ACTIONLOG_FILE="/var/log/security_actions.log"
 readonly ARCHIVEDIR_FILE="/backup/logs"
 readonly ADMINEMAIL_FILE="sanna.nilsson@utb.ecutbildning.se"
 readonly MIN_DISK_SPACE=5242880 
 readonly MAX_FAILED=20
 
-# readonly gör variablerna skrivskyddade för säkerhet, dvs värdet sk inte ändras senare i skriptet
+# readonly gör variablerna skrivskyddade för säkerhet, dvs värdet ska inte ändras senare i skriptet
 # /var/log/syslog och /var/log/auth.log är sökvägar till loggfilen som ska analyseras 
-# sec_watch_report.txt är fil där analysrapporten sparas
-# date +%Y%m%d ger dagens datum på rapporten
-#Diskutrymme definierat i KB (5KB)
-#MAX_FAILED=20 anger antal misslyckade försök innan ip:n räknas som "hög risk"
+# security_report_$(date +%Y%m%d).txt är fil där analysrapporten sparas med dagens datum på rapporten
+# Temporär fil med ett unikt namn
+# Loggar åtgärden om blockerade ip:n med ufw i /var/log/security_actions.log
+# Arkiverar och komprimerar loggar till /backup/logs
+# Mejlar rapporten till administratören sanna.nilsson@utb.ecutbildning.se  
+# Diskutrymme definierat i KB (5KB)
+# MAX_FAILED=20 anger antal misslyckade försök innan ip:n räknas som "hög risk"
 
 #----------------Säkerhetsåtgärder - Felhantering
 
 set -e 
 set -u  
-trap 'echo "Skript Avbrutet!" >&2; exit 1' INT TERM EXIT
+trap 'echo "Skript Avbrutet!"; rm -f "$TMP_FILE"; exit 1' INT TERM EXIT
 
-#Felhantering och avbrott. set -e avbryter skriptet om ett fel uppstår
+# Felhantering och avbrott. set -e avbryter skriptet om ett fel uppstår
 # set -u avbryter skriptet om man försöker använda en variabel som inte finns
-#trap skriver ut meddelande om något avbryter eller tycker på Ctrl+C
+# trap skriver ut meddelande om något avbryter eller tycker på Ctrl+C
+# Detta skyddar mot oväntade problem och rensar upp vid avbrott.  
 
 #-----------------Funktioner - Loggning och Varningar
 
+log_message() {
+	local level="$1"
+	local message="$2"
+	echo "$(date '+%F %T') [$level] $message"
+}
+
 check_file_readable() {
-  local file="$1"
+	local file="$1"
   if [[ -f "$file" && -r "$file" ]]; then
     log_message "INFO" "$file finns och är läsbar"
   else
@@ -50,19 +61,16 @@ check_file_readable() {
 check_file_readable "$AUTHLOG_FILE"
 check_file_readable "$SYSLOG_FILE"
 
-#Kontrollerar att loggarna finns
-#Kontrollerar att båda loggfilenra existerar och är skrivbara
-#Om någon inte finns eller saknar skrivbehörighetet, skriver ett felmeddelande och avslutar skriptet
+# Kontrollerar att båda loggfilenra existerar och är skrivbara
+# Om någon inte finns eller saknar skrivbehörighetet, skriver ett felmeddelande och avslutar skriptet
 
 
-TMP_FILE=$(mktemp)
+# Skapar temporär arbetsfil där vi sparar loggrader för analys
 
-#Skapar temporär arbetsfil där vi sparar loggrader för analys
-
-
-echo "[INFO] Extraherar loggar från senaste 24 timmar ..."
-awk -v Date="$(date --date='1 day ago' '+%b %_d')" '$0 ~ Date' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE" 
-grep "Failed password" "$AUTHLOG_FILE" > "$TMP_FILE" 
+#TMP_FILE=$(mktemp)
+#echo "[INFO] Extraherar loggar från senaste 24 timmar ..."
+#awk -v Date="$(date --date='1 day ago' '+%b %_d')" '$0 ~ Date' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE" 
+#grep "Failed password" "$AUTHLOG_FILE" > "$TMP_FILE" 
 
 #Extraherar relevanta rader från senaste 24h
 #Letar efter rader som innehåller gårdagens datum (månad + dag)
@@ -71,10 +79,10 @@ grep "Failed password" "$AUTHLOG_FILE" > "$TMP_FILE"
 
 #----------------Huvudlogik - Kopierar, Räknar och Analyserar loggar
 
-declare -A failed_attempts
-declare -A invalid_users
-declare -A accepted_logins
-declare -A session_opened
+#declare -A failed_attempts
+#declare -A invalid_users
+#declare -A accepted_logins
+#declare -A session_opened
 
 #declare -A skapar associativa arrayer, s k nyckel-värde-par
 #varje array håller koll på en viss typ av händelse
@@ -110,16 +118,16 @@ done < "$TMP_FILE"
 
 echo "==== Säkerhetsrapport $(date '+%Y-%m-%d') ====" > "$REPORT_FILE"
 
-#Öppnar eller skriver över rapportfilen
-#Sedan körs report_entry för att lägga till varje ip/användare
+#Öppnar eller skriver över rapportfilen. 
+#Sedan körs generate_report för att lägga till varje ip/användare
 
-report_entry() {
+generate_report() {
 	local type="$1"
 	local ip="$2"
 	local user="$3"
 	local count="$4"
 	local risk="Låg"
-#Funktionen report_entry skriver ut info pm varje inloggningsförsök
+#Funktionen generate_report skriver ut info pm varje inloggningsförsök
 #Om count > MAX_FAILED => risk = "Hög" + blockera ip med ufw
 
 	if [[ "$type" == "Failed" || "$type" == "Invalid" ]] && (( count > MAX_FAILED )); then
@@ -155,7 +163,7 @@ echo "[INFO] Rapport genererad: $REPORT_FILE"
 #---------------- Avslutning - Logga och Rensa 
 
 #Skickar rapporten via e-post
-if command -v mali &>/dev/null; then
+if command -v mail &>/dev/null; then
 	mail -s "Daglig säkerhetsrapport från $(hostname)" "$ADMINEMAIL_FILE" < "$REPORT_FILE"
 	echo "[INFO] Rapport skickad till $ADMINEMAIL_FILE"
 else
