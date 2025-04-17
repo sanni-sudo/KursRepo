@@ -14,7 +14,7 @@ readonly REPORT_FILE="security_report_$(date +%Y%m%d).txt" # Fil där analysrapp
 readonly TMP_FILE="/tmp/sec_watch_$$.tmp"         # $$ är process-ID för att undvika konflikter i temporära filer
 readonly ACTIONLOG_FILE="/var/log/security_actions.log"       # Loggar åtgärden om blockerade ip:n med ufw
 readonly ARCHIVEDIR_FILE="/backup/logs"           # Hit arkiveras och komprimeras loggar
-readonly ADMINMAIL_FILE="sanna.nilsson@utb.ecutbildning.se" # Hit mejlas rapporten till administratören
+readonly ADMINMAIL_FILE="testkali@testkalilinuxcl-2" # Hit mejlas rapporten till administratören
 readonly SCRIPT_NAME=$(basename "$0")             # Skriptnamn för loggning
 readonly THRESHOLD=5                            # Anger tröskelvärde för försök innan ip:n räknas som "hög risk"
 readonly LOG=log.txt                            #Arbetfil för kontroller av skriptet
@@ -127,7 +127,7 @@ block_ip() {
 #}
 
 
-# ------------------- Huvudlogik - Kopierar, Räknar och Analyserar Loggar --------------
+# ------------------- Huvudlogik - Kontrollerar, Filtrerar och Analyserar Loggar --------------
 
 # Kontrollerar att båda loggfilenra existerar och är läsbara
 
@@ -204,6 +204,16 @@ count_risk "$LOG"
 # tiden, IP och användarnamn.
 # Loopen går igenom varje rad i $LOG och loggar ett varningsmeddelnade.
 
+#Skickar rapporten via e-post
+#if command -v mail &>/dev/null; then
+#	mail -s "Daglig säkerhetsrapport från $(hostname)" "$ADMINEMAIL_FILE" < "$REPORT_FILE"
+#	echo "[INFO] Rapport skickad till $ADMINEMAIL_FILE"
+#else
+#	echo "[VARNING] mail-kommandot saknas - kunde inte skicka e-post!"
+#fi
+
+#Kontrollerar om mail-kommandot finns
+#Om det finns, skickar rapporten, annars skrivs en varning
 
 #Analyserar resultatet och agera
 #while read -r count ip user; do
@@ -239,25 +249,15 @@ count_risk "$LOG"
 
 #---------------- Avslutning - Logga och Rensa 
 
-#Skickar rapporten via e-post
-#if command -v mail &>/dev/null; then
-#	mail -s "Daglig säkerhetsrapport från $(hostname)" "$ADMINEMAIL_FILE" < "$REPORT_FILE"
-#	echo "[INFO] Rapport skickad till $ADMINEMAIL_FILE"
-#else
-#	echo "[VARNING] mail-kommandot saknas - kunde inte skicka e-post!"
-#fi
-
-#Kontrollerar om mail-kommandot finns
-#Om det finns, skickar rapporten, annars skrivs en varning
-
-#Aktiverar loggar äldre än 7 dagar
+# Aktiverar loggar äldre än 7 dagar
 #echo "[INFO] Aktiverar äldre loggfiler..."
+
+# Katalog där arkivet ska sparas
 #mkdir -p "$ARCHIVEDIR_FILE"
+
+# Namn på arkivfilen (datumstämpel)
 #find /var/log -type f \( -name "*.log" -o -name "*.gz" \) -mtime +7 -exec tar -rvf "$ARCHIVEDIR_FILE/log_backup_$(date +%Y%m%d).tar" {} \; -exec rm -f {} \;
 
 #Hittar .log och .gz-filer som är äldre än 7 dagar, sparar dem i ett tar-arkiv och tar bort originalen.
-
-
-
 
 #echo "[KLART] Säkerhetsanalys slutförd. Rapport sparad i $REPORT_FILE."
