@@ -1,0 +1,23 @@
+2025-04-16 20:43:36 [INFO] Extraherar loggar från senaste 24 timmar
+2025-04-16 20:43:36 [INFO] Filtrerar rader från loggfilen de senaste 24 timmarna...
+2025-04-16 20:43:36 [INFO] Starttid: 2025-04-14T20:43:36+02:00
+2025-04-16 20:43:36 [INFO---------------------------------------------] 
+2025-04-16 20:43:36 [ERROR] Invalid user detected! IP: 192.168.0.1 | User: johan | Time: 2025-04-15T19:10:30.763997+02:00 testkalilinuxcl-2 sshd-session[54357]:
+2025-04-16 20:43:37 [ACTION] Blocked IP: 192.168.0.1 via UFW
+2025-04-16 20:43:37 [ERROR] Invalid user detected! IP: 192.168.0.1 | User: johan | Time: 2025-04-15T19:10:44.835959+02:00 testkalilinuxcl-2 sshd-session[54479]:
+2025-04-16 20:43:37 [ACTION] Blocked IP: 192.168.0.1 via UFW
+2025-04-16 20:43:37 [ERROR] Invalid user detected! IP: 192.168.0.1 | User: johan | Time: 2025-04-15T19:10:54.376049+02:00 testkalilinuxcl-2 sshd-session[54553]:
+2025-04-16 20:43:37 [ACTION] Blocked IP: 192.168.0.1 via UFW
+2025-04-16 20:43:37 [ERROR] Invalid user detected! IP: 192.168.0.1 | User: sanna | Time: 2025-04-15T19:11:09.652023+02:00 testkalilinuxcl-2 sshd-session[54683]:
+2025-04-16 20:43:38 [ACTION] Blocked IP: 192.168.0.1 via UFW
+2025-04-16 20:43:38 [ERROR] Invalid user detected! IP: 192.168.0.1 | User: sanna | Time: 2025-04-15T19:11:21.884387+02:00 testkalilinuxcl-2 sshd-session[54793]:
+2025-04-16 20:43:38 [ACTION] Blocked IP: 192.168.0.1 via UFW
+2025-04-16 20:43:38 [WARNING] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-15T11:22:47.210770+02:00
+2025-04-16 20:43:38 [WARNING] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-15T11:23:04.792601+02:00
+2025-04-16 20:43:38 [WARNING] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-15T11:23:42.296850+02:00
+2025-04-16 20:43:38 [WARNING] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-15T11:23:58.136493+02:00
+2025-04-16 20:43:38 [WARNING] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-15T11:24:05.488935+02:00
+2025-04-16 20:43:38 [WARNING] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-15T11:24:21.503894+02:00
+2025-04-16 20:43:38 [WARNING] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-15T11:24:33.449341+02:00
+2025-04-16 20:43:38 [WARNING] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-15T11:24:45.111575+02:00
+2025-04-16 20:43:38 [ERROR] IP: 192.168.0.1 | User: testkali | Time: 2025-04-15T11:24:45.111575+02:00 | Attempts: 8

@@ -10,14 +10,15 @@
 
 readonly SYSLOG_FILE="/var/log/syslog"            # Sökväg till loggfilen som ska analyseras 
 readonly AUTHLOG_FILE="/var/log/auth.log"         # Sökväg till loggfilen som ska analyseras 
-readonly REPORT_FILE="security_report_$(date +%Y%m%d).txt"    # Fil där analysrapporten sparas med dagens datum på rapporten
+readonly REPORT_FILE="security_report_$(date +%Y%m%d).txt" # Fil där analysrapporten sparas med dagens datum på rapporten
 readonly TMP_FILE="/tmp/sec_watch_$$.tmp"         # $$ är process-ID för att undvika konflikter i temporära filer
 readonly ACTIONLOG_FILE="/var/log/security_actions.log"       # Loggar åtgärden om blockerade ip:n med ufw
 readonly ARCHIVEDIR_FILE="/backup/logs"           # Hit arkiveras och komprimeras loggar
-readonly ADMINMAIL_FILE="admin@example.com"      # Hit mejlas rapporten till administratören
+readonly ADMINMAIL_FILE="sanna.nilsson@utb.ecutbildning.se" # Hit mejlas rapporten till administratören
 readonly SCRIPT_NAME=$(basename "$0")             # Skriptnamn för loggning
 readonly THRESHOLD=5                            # Anger tröskelvärde för försök innan ip:n räknas som "hög risk"
-readonly LOG=log.txt
+readonly LOG=log.txt                            #Arbetfil för kontroller av skriptet
+
 # readonly gör variablerna skrivskyddade för säkerhet, dvs värdet ska inte ändras senare i skriptet 
 
 #----------------Säkerhetsåtgärder - Felhantering och avbrott
@@ -38,7 +39,7 @@ readonly LOG=log.txt
 log_message() {
 	local level="$1"          # INFO, WARNING, ERROR
 	local message="$2"
-#printf "%s [%s] %s: %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$SCRIPT_NAME" "$message" >> "$AUCTIONLOG_FILE"
+#printf "%s [%s] %s: %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$SCRIPT_NAME" "$message" >> "$REPORT_FILE"
   echo "$(date '+%F %T') [$level] $message" >> "$REPORT_FILE"
 }
 
@@ -77,30 +78,35 @@ check_file_writable() {
   fi
 }
 
+# Funktionen kontrollerar en fil och räknar misslyckade inloggningsförsök.
 count_risk() {
     local input_file="$1"
     local temp_warnings="/tmp/ip_warnings_$$.txt"
     touch "$temp_warnings"
 
-    awk '{
-        ip_counts[$1]++
-        time[$1] = $3
-        user[$1] = $2
-    }
+    awk -v out="$temp_warnings" -v threshold="$THRESHOLD" '{
+    ip_counts[$1]++
+    time[$1] = $3
+    user[$1] = $2
+    } 
     END {
-        for (ip in ip_counts) {
-            if (ip_counts[ip] > "$THRESHOLD") {
-              printf "WARNING! IP: %s | User: %s | Time: %s | Attempts: %d\n", ip, user[ip], time[ip], ip_counts[ip] > "'"$temp_warnings"'"
-            }
+    for (ip in ip_counts) {
+        if (ip_counts[ip] > threshold) {
+            printf "IP: %s | User: %s | Time: %s | Attempts: %d\n", ip, user[ip], time[ip], ip_counts[ip] > out
         }
-    }' "$input_file"
+    }
+}' "$input_file"
+
 
     # Läs från tempfilen och anropa log_message rad för rad
     while IFS= read -r line; do
         log_message "ERROR" "$line"
+        ip=$(echo "$line" | grep -oP 'IP:\s*\K[\d\.]+')
+        attempts=$(echo "$line" | grep -oP 'Attempts:\s*\K\d+')
+        send_alert "$ip" "$attempts"
     done < "$temp_warnings"
 
-    rm -f "$temp_warnings"
+    #rm -f "$temp_warnings"
 }
 
 
@@ -143,7 +149,7 @@ log_message "INFO" "Extraherar loggar från senaste 24 timmar"
 #awk -v Date="$(date --date='1 day ago' '+%b %_d')" '$0 ~ Date' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE"
 
 # Skapar datumsträng för 24 timmar sen
-SINCE=$(date -d '24 hours ago' --iso-8601=seconds)
+SINCE=$(date -d '48 hours ago' --iso-8601=seconds)
 
 log_message "INFO" "Filtrerar rader från loggfilen de senaste 24 timmarna..."
 log_message "INFO" "Starttid: $SINCE"
@@ -156,7 +162,7 @@ awk -v since="$SINCE" '{
 }' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE"
 
 # Extraherar relevanta rader från senaste 24h och skickar dem till $TMP_FILE
-# Sparar dem i TMP_FILE 
+# Sparar dem i $TMP_FILE 
 
 grep -E "password check failed|authentication failure|Invalid user|session opened" "$TMP_FILE" > "$ACTIONLOG_FILE"
 # grep -i "password checked failed" "$AUTHLOG_FILE" > "$REPORT_FILE
@@ -171,6 +177,8 @@ grep "Invalid user" "$ACTIONLOG_FILE" | while read -r line; do
     user=$(echo "$line" | grep -oP "Invalid user \K[a-zA-Z0-9._-]+")
     timestamp=$(echo "$line" | awk '{print $1, $2, $3}')
     log_message "ERROR" "Invalid user detected! IP: $ip | User: $user | Time: $timestamp"
+    block_ip "$ip"
+    echo "Blocked IP: $ip"
 done
 
 # 2. Extrahera IP, user och timestamp från authentication failure
@@ -183,7 +191,19 @@ awk '/authentication failure/ {
     }
 }' "$ACTIONLOG_FILE" > "$LOG"
 
+#För varje rad i loggfieln skriver vi ut WARNING och information till Rapportfieln med funktionen log_message
+while read -r ip user timestamp; do
+  log_message "WARNING" "Misslyckad inloggning! IP: $ip | User: $user | Time: $timestamp"
+
+done < "$LOG"
+
+#risk_to_log "$LOG"
 count_risk "$LOG"
+
+# Analyserar filen för misslyckade inloggningsförsök och plockar ut de viktigaste parametrarna: 
+# tiden, IP och användarnamn.
+# Loopen går igenom varje rad i $LOG och loggar ett varningsmeddelnade.
+
 
 #Analyserar resultatet och agera
 #while read -r count ip user; do
