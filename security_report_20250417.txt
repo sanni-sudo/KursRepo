@@ -1,0 +1,26 @@
+2025-04-17 19:48:12 [INFO] Extraherar loggar från senaste 24 timmar: 
+2025-04-17 19:48:12 [INFO] Starttid: 2025-04-16T19:48:12+02:00: 
+2025-04-17 19:48:12 [INFO---------------------------------------------] : 
+2025-04-17 19:48:12 [HÖG RISK] Invalid user detected! IP: 192.168.0.1 | User: mamma | Time: 2025-04-17T17:57:44.718505+02:00 testkalilinuxcl-2 sshd-session[121671]:: 
+2025-04-17 19:48:12 [ACTION] Blocked IP: 192.168.0.1 via UFW: 
+2025-04-17 19:48:12 [HÖG RISK] Invalid user detected! IP: 192.168.0.1 | User: sanna | Time: 2025-04-17T17:58:05.326147+02:00 testkalilinuxcl-2 sshd-session[121843]:: 
+2025-04-17 19:48:13 [ACTION] Blocked IP: 192.168.0.1 via UFW: 
+2025-04-17 19:48:13 [HÖG RISK] Invalid user detected! IP: 192.168.0.1 | User: hugo | Time: 2025-04-17T17:58:23.498162+02:00 testkalilinuxcl-2 sshd-session[121995]:: 
+2025-04-17 19:48:13 [ACTION] Blocked IP: 192.168.0.1 via UFW: 
+2025-04-17 19:48:13 [HÖG RISK] Invalid user detected! IP: 192.168.0.1 | User: johan | Time: 2025-04-17T17:58:40.749845+02:00 testkalilinuxcl-2 sshd-session[122133]:: 
+2025-04-17 19:48:13 [ACTION] Blocked IP: 192.168.0.1 via UFW: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T17:59:03.753448+02:00: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T17:59:14.259904+02:00: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T17:59:26.153564+02:00: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T17:59:40.154982+02:00: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T17:59:51.670400+02:00: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T18:00:00.949480+02:00: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T18:00:09.537998+02:00: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T18:00:19.099185+02:00: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T18:00:57.032480+02:00: 
+2025-04-17 19:48:13 [MEDEL RISK] Misslyckad inloggning! IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T18:05:56.294883+02:00: 
+2025-04-17 19:48:13 [HÖG RISK] IP: 192.168.0.1 | User: testkali | Time: 2025-04-17T18:05:56.294883+02:00 | Attempts: 10: 
+2025-04-17 20:08:54 [INFO] /var/log/auth.log finns och är läsbar: 
+2025-04-17 20:08:54 [INFO] /var/log/syslog finns och är läsbar: 
+2025-04-17 20:13:11 [INFO] /var/log/auth.log finns och är läsbar: 
+2025-04-17 20:13:11 [INFO] /var/log/syslog finns och är läsbar: 

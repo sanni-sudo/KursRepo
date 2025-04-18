@@ -10,14 +10,14 @@
 
 readonly SYSLOG_FILE="/var/log/syslog"            # Sökväg till loggfilen som ska analyseras 
 readonly AUTHLOG_FILE="/var/log/auth.log"         # Sökväg till loggfilen som ska analyseras 
-readonly REPORT_FILE="security_report_$(date +%Y%m%d).txt"    # Fil där analysrapporten sparas med dagens datum på rapporten
+readonly REPORT_FILE="security_report_$(date +%Y%m%d).txt" # Fil där analysrapporten sparas med dagens datum på rapporten
 readonly TMP_FILE="/tmp/sec_watch_$$.tmp"         # $$ är process-ID för att undvika konflikter i temporära filer
 readonly ACTIONLOG_FILE="/var/log/security_actions.log"       # Loggar åtgärden om blockerade ip:n med ufw
 readonly ARCHIVEDIR_FILE="/backup/logs"           # Hit arkiveras och komprimeras loggar
-readonly ADMINMAIL_FILE="johan.jannesson@gmail.com"      # Hit mejlas rapporten till administratören
-readonly SCRIPT_NAME=$(basename "$0")             # Skriptnamn för loggning
+readonly ADMINMAIL_FILE="testkali@testkalilinuxcl-2" # Hit mejlas rapporten till administratören
 readonly THRESHOLD=5                            # Anger tröskelvärde för försök innan ip:n räknas som "hög risk"
-readonly LOG=log.txt                            #Arbetfil för kontroller av skriptet
+readonly LOG="log.txt"                            #Arbetfil för kontroller av skriptet
+readonly SUSSPECTLOG_FILE="susspect_log.txt"
 
 # readonly gör variablerna skrivskyddade för säkerhet, dvs värdet ska inte ändras senare i skriptet 
 
@@ -39,8 +39,7 @@ readonly LOG=log.txt                            #Arbetfil för kontroller av skr
 log_message() {
 	local level="$1"          # INFO, WARNING, ERROR
 	local message="$2"
-#printf "%s [%s] %s: %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$SCRIPT_NAME" "$message" >> "$REPORT_FILE"
-  echo "$(date '+%F %T') [$level] $message" >> "$REPORT_FILE"
+  printf "%s [%s] %s: %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$message" >> "$REPORT_FILE"
 }
 
 # Skickar e-postvarning
@@ -52,8 +51,8 @@ send_alert() {
 
     echo -e "$body" | mail -s "$subject" "$ADMINMAIL_FILE"
 }
-#Kontrollerar om filen är läsbar
-# Om någon inte finns eller saknar läsbehörighetet, skriver ett felmeddelande och avslutar skriptet
+# Kontrollerar om filen är läsbar
+# Om någon fil inte finns eller saknar läsbehörighetet, skriver ett felmeddelande och avslutar skriptet
 check_file_readable() {
 	local file="$1"
   if [[ -f "$file" && -r "$file" ]]; then
@@ -65,16 +64,17 @@ check_file_readable() {
   fi
 
 }
-
+# Testar om filen är skrivbar
 # Försöker skapa filen om den inte finns och döljer eventuella felmeddelanden från touch.
 # Om skapa filen misslyckas, skriver ett felmeddelande till loggen och avslutar skriptet med felkod.
 check_file_writable() {
   local file="$1"
   if [[ ! -w "$file" ]]; then
-  touch "$file" 2>/dev/null || {
+  touch "$file" 2>/dev/null || 
     log_message "ERROR" "Kan inte skriva till $file. Kontrollera behörigheter"
     exit 1
-  }
+  else
+    log_message "INFO" "$file finns och är skrivbar"
   fi
 }
 
@@ -127,7 +127,7 @@ block_ip() {
 #}
 
 
-# ------------------- Huvudlogik - Kopierar, Räknar och Analyserar Loggar --------------
+# ------------------- Huvudlogik - Kontrollerar, Filtrerar och Analyserar Loggar --------------
 
 # Kontrollerar att båda loggfilenra existerar och är läsbara
 
@@ -140,30 +140,25 @@ check_file_writable "$ACTIONLOG_FILE"
 # Skapar temporär arbetsfil där vi sparar loggrader för analys
 touch "$TMP_FILE"
 touch "$REPORT_FILE"
-#Tömmer rapportfilen
+#Tömmer rapportfilen om vi kört testet mer än en gång de senaste 24 timmarna.
 > "$REPORT_FILE"
 
+# Skapar datumsträng för 24 timmar bakåt formaterat på samma format som i våra loggfiler(ISO-8601)
+SINCE=$(date -d '24 hours ago' --iso-8601=seconds)
+
+# Skriver generell info till rapportfilen
 log_message "INFO" "Extraherar loggar från senaste 24 timmar"
-#grep -E "password check failed|authentication failure|session opened" $AUTHLOG_FILE | awk -v cutoff="$(date -d '4 hours ago' +%s)" > $TMP_FILE
-#grep -E "password check failed|authentication failure|session opened" $SYSLOG_FILE > $TMP_FILE
-#awk -v Date="$(date --date='1 day ago' '+%b %_d')" '$0 ~ Date' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE"
-
-# Skapar datumsträng för 24 timmar sen
-SINCE=$(date -d '48 hours ago' --iso-8601=seconds)
-
-log_message "INFO" "Filtrerar rader från loggfilen de senaste 24 timmarna..."
 log_message "INFO" "Starttid: $SINCE"
 log_message "INFO""---------------------------------------------"
 
-# Filtrerar och skriver ut loggrader
+# Tar syslog och auth.log från de senaste 24 h och skriver dem till en temporär fil
+# Denna temporära fil används sedan för att filtrera ut misstänkta händelser
 awk -v since="$SINCE" '{
     log_time = substr($0, 1, 19)
     if (log_time >= since) print
 }' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE"
 
-# Extraherar relevanta rader från senaste 24h och skickar dem till $TMP_FILE
-# Sparar dem i TMP_FILE 
-
+# Extraherar relevanta rader från temporär fil och skickar 
 grep -E "password check failed|authentication failure|Invalid user|session opened" "$TMP_FILE" > "$ACTIONLOG_FILE"
 # grep -i "password checked failed" "$AUTHLOG_FILE" > "$REPORT_FILE
 # echo "[KLART] Rader sparade till: $REPORT_FILE
@@ -204,6 +199,16 @@ count_risk "$LOG"
 # tiden, IP och användarnamn.
 # Loopen går igenom varje rad i $LOG och loggar ett varningsmeddelnade.
 
+#Skickar rapporten via e-post
+#if command -v mail &>/dev/null; then
+#	mail -s "Daglig säkerhetsrapport från $(hostname)" "$ADMINEMAIL_FILE" < "$REPORT_FILE"
+#	echo "[INFO] Rapport skickad till $ADMINEMAIL_FILE"
+#else
+#	echo "[VARNING] mail-kommandot saknas - kunde inte skicka e-post!"
+#fi
+
+#Kontrollerar om mail-kommandot finns
+#Om det finns, skickar rapporten, annars skrivs en varning
 
 #Analyserar resultatet och agera
 #while read -r count ip user; do
@@ -239,25 +244,15 @@ count_risk "$LOG"
 
 #---------------- Avslutning - Logga och Rensa 
 
-#Skickar rapporten via e-post
-#if command -v mail &>/dev/null; then
-#	mail -s "Daglig säkerhetsrapport från $(hostname)" "$ADMINEMAIL_FILE" < "$REPORT_FILE"
-#	echo "[INFO] Rapport skickad till $ADMINEMAIL_FILE"
-#else
-#	echo "[VARNING] mail-kommandot saknas - kunde inte skicka e-post!"
-#fi
-
-#Kontrollerar om mail-kommandot finns
-#Om det finns, skickar rapporten, annars skrivs en varning
-
-#Aktiverar loggar äldre än 7 dagar
+# Aktiverar loggar äldre än 7 dagar
 #echo "[INFO] Aktiverar äldre loggfiler..."
+
+# Katalog där arkivet ska sparas
 #mkdir -p "$ARCHIVEDIR_FILE"
+
+# Namn på arkivfilen (datumstämpel)
 #find /var/log -type f \( -name "*.log" -o -name "*.gz" \) -mtime +7 -exec tar -rvf "$ARCHIVEDIR_FILE/log_backup_$(date +%Y%m%d).tar" {} \; -exec rm -f {} \;
 
 #Hittar .log och .gz-filer som är äldre än 7 dagar, sparar dem i ett tar-arkiv och tar bort originalen.
-
-
-
 
 #echo "[KLART] Säkerhetsanalys slutförd. Rapport sparad i $REPORT_FILE."

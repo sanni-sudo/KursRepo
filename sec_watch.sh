@@ -12,25 +12,26 @@ readonly SYSLOG_FILE="/var/log/syslog"            # Sökväg till loggfilen som 
 readonly AUTHLOG_FILE="/var/log/auth.log"         # Sökväg till loggfilen som ska analyseras 
 readonly REPORT_FILE="security_report_$(date +%Y%m%d).txt" # Fil där analysrapporten sparas med dagens datum på rapporten
 readonly TMP_FILE="/tmp/sec_watch_$$.tmp"         # $$ är process-ID för att undvika konflikter i temporära filer
-readonly ACTIONLOG_FILE="/var/log/security_actions.log"       # Loggar åtgärden om blockerade ip:n med ufw
-readonly ARCHIVEDIR_FILE="/backup/logs"           # Hit arkiveras och komprimeras loggar
-readonly ADMINMAIL_FILE="testkali@testkalilinuxcl-2" # Hit mejlas rapporten till administratören
-readonly SCRIPT_NAME=$(basename "$0")             # Skriptnamn för loggning
+readonly ACTIONLOG_FILE="/var/log/security_actions_$$.log"       # Loggar åtgärden om blockerade ip:n med ufw
+readonly ARCHIVEDIR="/backup/logs"           # Hit arkiveras och komprimeras loggar
+readonly ADMINMAIL="testkali@testkalilinuxcl-2" # Hit mejlas rapporten till administratören
 readonly THRESHOLD=5                            # Anger tröskelvärde för försök innan ip:n räknas som "hög risk"
-readonly LOG=log.txt                            #Arbetfil för kontroller av skriptet
+readonly LOG="log.txt"                            #Loggfil för att samla "authentication failure"
+readonly SUSSPECTLOG_FILE="susspect_log.txt"      #Loggfil för misstänkta inloggningsförsök
 
 # readonly gör variablerna skrivskyddade för säkerhet, dvs värdet ska inte ändras senare i skriptet 
 
 #----------------Säkerhetsåtgärder - Felhantering och avbrott
+# set -e avbryter skriptet om ett fel uppstår
+# set -u avbryter skriptet om man försöker använda en variabel som inte finns
+# trap skriver ut meddelande om något avbryter eller tycker på Ctrl+C
+# Detta skyddar mot oväntade problem och rensar upp vid avbrott. 
 
 #set -e 
 #set -u  
 #trap 'echo "Skript Avbrutet!"; rm -f "$TMP_FILE"; exit 1' INT TERM EXIT
 
-# set -e avbryter skriptet om ett fel uppstår
-# set -u avbryter skriptet om man försöker använda en variabel som inte finns
-# trap skriver ut meddelande om något avbryter eller tycker på Ctrl+C
-# Detta skyddar mot oväntade problem och rensar upp vid avbrott.  
+ 
 
 #-----------------Funktioner - Loggning och Varningar
 
@@ -39,21 +40,31 @@ readonly LOG=log.txt                            #Arbetfil för kontroller av skr
 log_message() {
 	local level="$1"          # INFO, WARNING, ERROR
 	local message="$2"
-#printf "%s [%s] %s: %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$SCRIPT_NAME" "$message" >> "$REPORT_FILE"
-  echo "$(date '+%F %T') [$level] $message" >> "$REPORT_FILE"
+  printf "%s [%s] %s:\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$message" >> "$REPORT_FILE"
 }
 
-# Skickar e-postvarning
-send_alert() {
-    local ip="$1"
-    local attempts="$2"
-    local subject="Hög risk varning: $ip överskred tröskelvärdet"
-    local body="IP $ip hade $attempts misslyckade försök. Se $ACTIONLOG_FILE för detaljer."
+# Skicka en rapport till säkadmin
+send_mail_with_attachment() {
+    local subject="Daglig rapportfil linux servermiljö"
+    local body="Här kommer den dagliga genererade loggfilen med misstänkta inloggningsförsök"
+    local recipient="$ADMINMAIL"  
+    local attachment="$REPORT_FILE"     
 
-    echo -e "$body" | mail -s "$subject" "$ADMINMAIL_FILE"
+  
+    # Kontrollera att filen verkligen finns
+    if [[ ! -f "$attachment" ]]; then
+        echo "[ERROR] Bifogad fil saknas: $attachment"
+        return 1
+    fi
+
+    # Skicka meddelande med bifogad fil
+    echo -e "$body" | mail -s "$subject" -a "$attachment" "$recipient"
+    echo "fil skickad"
 }
-#Kontrollerar om filen är läsbar
-# Om någon inte finns eller saknar läsbehörighetet, skriver ett felmeddelande och avslutar skriptet
+
+
+# Kontrollerar om filen är läsbar
+# Om någon fil inte finns eller saknar läsbehörighetet, skriver ett felmeddelande och avslutar skriptet
 check_file_readable() {
 	local file="$1"
   if [[ -f "$file" && -r "$file" ]]; then
@@ -65,17 +76,22 @@ check_file_readable() {
   fi
 
 }
-
+# Testar om filen är skrivbar
 # Försöker skapa filen om den inte finns och döljer eventuella felmeddelanden från touch.
 # Om skapa filen misslyckas, skriver ett felmeddelande till loggen och avslutar skriptet med felkod.
 check_file_writable() {
   local file="$1"
+
+  # Om filen inte är skrivbar
   if [[ ! -w "$file" ]]; then
-  touch "$file" 2>/dev/null || {
-    log_message "ERROR" "Kan inte skriva till $file. Kontrollera behörigheter"
-    exit 1
-  }
+    # Försök skapa filen om den inte finns
+    if ! touch "$file" 2>/dev/null; then
+      log_message "ERROR" "Kan inte skriva till $file. Kontrollera behörigheter"
+      exit 1
+    fi
   fi
+
+  log_message "INFO" "$file finns och är skrivbar"
 }
 
 # Funktionen kontrollerar en fil och räknar misslyckade inloggningsförsök.
@@ -98,15 +114,15 @@ count_risk() {
 }' "$input_file"
 
 
-    # Läs från tempfilen och anropa log_message rad för rad
+    # Läs från tempfilen som bara innehåller fler än THRESHOLD försök --> HÖG RISK
+    # Skriv till rapportfil
     while IFS= read -r line; do
-        log_message "ERROR" "$line"
+        log_message "HÖG RISK" "$line"
         ip=$(echo "$line" | grep -oP 'IP:\s*\K[\d\.]+')
         attempts=$(echo "$line" | grep -oP 'Attempts:\s*\K\d+')
-        send_alert "$ip" "$attempts"
     done < "$temp_warnings"
-
-    #rm -f "$temp_warnings"
+    
+    rm -f "$temp_warnings"
 }
 
 
@@ -115,6 +131,20 @@ block_ip() {
     local ip="$1"
     sudo ufw deny from "$ip"
     log_message "ACTION" "Blocked IP: $ip via UFW"
+}
+
+archive_logs() {
+    # Definiera loggfil och destination
+    local archive_name="security_logs_backup_$(date +%Y%m%d).tar"
+
+    # Skapa målarkivkatalog om den inte finns
+    mkdir -p "$ARCHIVEDIR"
+
+    # Hitta loggar som är äldre än 7 dagar och arkivera dem
+    find /var/log -type f -name "security_actions_*.log" -mtime +7 -exec tar -rvf "$ARCHIVEDIR/$archive_name" {} \; -exec rm -f {} \;
+
+    # Skriv ut ett meddelande
+    echo "[INFO] Loggar äldre än 7 dagar har arkiverats till $ARCHIVEDIR/$archive_name."
 }
 
 #Städar tmp-filer
@@ -129,6 +159,11 @@ block_ip() {
 
 # ------------------- Huvudlogik - Kontrollerar, Filtrerar och Analyserar Loggar --------------
 
+# Skapar temporär arbetsfil där vi sparar loggrader för analys
+touch "$TMP_FILE"
+touch "$REPORT_FILE"
+#Tömmer rapportfilen om vi kört testet mer än en gång de senaste 24 timmarna.
+> "$REPORT_FILE"
 # Kontrollerar att båda loggfilenra existerar och är läsbara
 
 check_file_readable "$AUTHLOG_FILE"
@@ -136,52 +171,41 @@ check_file_readable "$SYSLOG_FILE"
 
 # Kontrollerar att filen är skrivbar
 check_file_writable "$ACTIONLOG_FILE"
+check_file_writable "$SUSSPECTLOG_FILE"
+check_file_writable "$TMP_FILE"
+check_file_writable "$REPORT_FILE"
+check_file_writable "$TMP_FILE"
 
-# Skapar temporär arbetsfil där vi sparar loggrader för analys
-touch "$TMP_FILE"
-touch "$REPORT_FILE"
-#Tömmer rapportfilen
-> "$REPORT_FILE"
-
-log_message "INFO" "Extraherar loggar från senaste 24 timmar"
-#grep -E "password check failed|authentication failure|session opened" $AUTHLOG_FILE | awk -v cutoff="$(date -d '4 hours ago' +%s)" > $TMP_FILE
-#grep -E "password check failed|authentication failure|session opened" $SYSLOG_FILE > $TMP_FILE
-#awk -v Date="$(date --date='1 day ago' '+%b %_d')" '$0 ~ Date' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE"
-
-# Skapar datumsträng för 24 timmar sen
+# Skapar datumsträng för 24 timmar bakåt formaterat på samma format som i våra loggfiler(ISO-8601)
 SINCE=$(date -d '48 hours ago' --iso-8601=seconds)
 
-log_message "INFO" "Filtrerar rader från loggfilen de senaste 24 timmarna..."
+# Skriver generell info till rapportfilen
+log_message "INFO" "Extraherar loggar från senaste 24 timmar"
 log_message "INFO" "Starttid: $SINCE"
 log_message "INFO""---------------------------------------------"
 
-# Filtrerar och skriver ut loggrader
+# Tar syslog och auth.log från de senaste 24 h och skriver dem till en temporär fil
+# Denna temporära fil används sedan för att filtrera ut misstänkta händelser
 awk -v since="$SINCE" '{
     log_time = substr($0, 1, 19)
     if (log_time >= since) print
 }' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE"
 
-# Extraherar relevanta rader från senaste 24h och skickar dem till $TMP_FILE
-# Sparar dem i $TMP_FILE 
+# Extraherar relevanta rader från temporär fil och skickar 
+grep -E "password check failed|authentication failure|Invalid user|session opened" "$TMP_FILE" > "$SUSSPECTLOG_FILE"
 
-grep -E "password check failed|authentication failure|Invalid user|session opened" "$TMP_FILE" > "$ACTIONLOG_FILE"
-# grep -i "password checked failed" "$AUTHLOG_FILE" > "$REPORT_FILE
-# echo "[KLART] Rader sparade till: $REPORT_FILE
-# awk -v Date="$(date --date='1 day ago' '+%b %_d')" '$0 ~ Date' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE" 
-# grep "password checked failed" "$AUTHLOG_FILE" > "$TMP_FILE" 
-# Extraherar relevanta rader från senaste 24h Extraherar loggar från senaste 24 timmar ..."
-
-# 1. Kontrollera om "Invalid user" förekommer och skriv ut IP, user och tid
-grep "Invalid user" "$ACTIONLOG_FILE" | while read -r line; do
+# Kontrollerar om "Invalid user" förekommer och skriver ut IP, användare tid och övrig info till rapportfil
+# Om "Invalid user" förekommer blockeras denna IP i ufw på första förekomsten
+grep "Invalid user" "$SUSSPECTLOG_FILE" | while read -r line; do
     ip=$(echo "$line" | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}")
     user=$(echo "$line" | grep -oP "Invalid user \K[a-zA-Z0-9._-]+")
     timestamp=$(echo "$line" | awk '{print $1, $2, $3}')
-    log_message "ERROR" "Invalid user detected! IP: $ip | User: $user | Time: $timestamp"
+    log_message "HÖG RISK" "Invalid user detected! IP: $ip | User: $user | Time: $timestamp"
     block_ip "$ip"
     echo "Blocked IP: $ip"
 done
 
-# 2. Extrahera IP, user och timestamp från authentication failure
+# Kontrollerar om "authentication failure" förekommer och skriver ut IP, användare tid och övrig info till logfil
 awk '/authentication failure/ {
     match($0, /^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+)/, ts)
     match($0, /rhost=([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/, ip)
@@ -189,75 +213,21 @@ awk '/authentication failure/ {
     if (ip[1] && usr[1] && ts[1]) {
         print ip[1], usr[1], ts[1]
     }
-}' "$ACTIONLOG_FILE" > "$LOG"
+}' "$SUSSPECTLOG_FILE" > "$LOG"
 
-#För varje rad i loggfieln skriver vi ut WARNING och information till Rapportfieln med funktionen log_message
+#För varje rad i loggfilen skriver vi ut WARNING och information till rapportfilen
 while read -r ip user timestamp; do
-  log_message "WARNING" "Misslyckad inloggning! IP: $ip | User: $user | Time: $timestamp"
-
+  log_message "MEDEL RISK" "Misslyckad inloggning! IP: $ip | User: $user | Time: $timestamp"
 done < "$LOG"
 
-#risk_to_log "$LOG"
+# Räknar hur många authentication failures varje unik IP finns i loggfilen
 count_risk "$LOG"
 
-# Analyserar filen för misslyckade inloggningsförsök och plockar ut de viktigaste parametrarna: 
-# tiden, IP och användarnamn.
-# Loopen går igenom varje rad i $LOG och loggar ett varningsmeddelnade.
+# Maila rapport till säkadmin
+send_mail_with_attachment
+echo "[INFO] Rapport genererad: $REPORT_FILE"
+echo "[KLART] Säkerhetsanalys slutförd. Rapport sparad i $REPORT_FILE."
 
-#Skickar rapporten via e-post
-#if command -v mail &>/dev/null; then
-#	mail -s "Daglig säkerhetsrapport från $(hostname)" "$ADMINEMAIL_FILE" < "$REPORT_FILE"
-#	echo "[INFO] Rapport skickad till $ADMINEMAIL_FILE"
-#else
-#	echo "[VARNING] mail-kommandot saknas - kunde inte skicka e-post!"
-#fi
+# Arkivera loggar äldre än 7 dagar
+archive_logs
 
-#Kontrollerar om mail-kommandot finns
-#Om det finns, skickar rapporten, annars skrivs en varning
-
-#Analyserar resultatet och agera
-#while read -r count ip user; do
-  # Ignorerar tomma rader eller ogiltiga rader
-  #[[ -z "$count" || -z "$ip" || "$user" ]] && continue
-
-  #if (( count > THRESHOLD )); then
-    #risk="HÖG RISK"
-    #echo "$(date '+%F %T') -IP: $ip, Användare: $user, Försök: $count, Risk: $risk >> "$REPORT_FILE"
-    #log_message "WARNING" "IP $ip med användare $user hade $count försök - $risk"
-    #else
-    #risk="Låg risk"
-    #echo "$(date '+%F %T') -IP: $ip, Användare: $user, Försök: $count, Risk: $risk >> "$REPORT_FILE"
-    #log_message "INFO" "IP $ip med användare $user hade $count försök - $risk"
-  #fi
-  #done < "$TMP_FILE"
-
-# Genererar rapport och mejlar den till administrator
-
-#mail -s "Säkerhetsrapport $(date '+%F')" "$ADMINMAIL" < "$REPORT_FILE"
-
-#Öppnar eller skriver över rapportfilen.
-
-# Funktion för att generera en rapport för att lägga till varje ip/användare
-
-#generate_report() {
-#  echo "Logganalysrapport - $(date)" >> "$REPORT_FILE"
-#  echo "Antal felmeddelanden: $SHRESHOLD" >> "$REPORT_FILE"
-#}
- 
-#
-#echo "[INFO] Rapport genererad: $REPORT_FILE"
-
-#---------------- Avslutning - Logga och Rensa 
-
-# Aktiverar loggar äldre än 7 dagar
-#echo "[INFO] Aktiverar äldre loggfiler..."
-
-# Katalog där arkivet ska sparas
-#mkdir -p "$ARCHIVEDIR_FILE"
-
-# Namn på arkivfilen (datumstämpel)
-#find /var/log -type f \( -name "*.log" -o -name "*.gz" \) -mtime +7 -exec tar -rvf "$ARCHIVEDIR_FILE/log_backup_$(date +%Y%m%d).tar" {} \; -exec rm -f {} \;
-
-#Hittar .log och .gz-filer som är äldre än 7 dagar, sparar dem i ett tar-arkiv och tar bort originalen.
-
-#echo "[KLART] Säkerhetsanalys slutförd. Rapport sparad i $REPORT_FILE."
