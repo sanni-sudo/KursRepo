@@ -43,27 +43,25 @@ log_message() {
   printf "%s [%s] %s:\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$message" >> "$REPORT_FILE"
 }
 
-# Skicka en rapport till säkadmin
+# Skicka en rapport till SäkAdmin
 send_mail_with_attachment() {
-    local subject="Daglig rapportfil linux servermiljö"
-    local body="Här kommer den dagliga genererade loggfilen med misstänkta inloggningsförsök"
+    local subject="Daglig rapportfil Linux servermiljö"
+    #local body="Här kommer den dagliga genererade loggfilen med misstänkta inloggningsförsök"
     local recipient="$ADMINMAIL"  
     local attachment="$REPORT_FILE"     
 
   
-    # Kontrollera att filen verkligen finns
+    # Kontrollera att rapporten verkligen finns
     if [[ ! -f "$attachment" ]]; then
-        echo "[ERROR] Bifogad fil saknas: $attachment"
+        echo "[ERROR] Rapporten saknas: $attachment"
         return 1
     fi
 
-    # Skicka meddelande med bifogad fil
-    echo -e "$body" | mail -s "$subject" -a "$attachment" "$recipient"
-    echo "fil skickad"
+    # Skicka meddelande med rapportinnehållet
+    mail -s "$subject" "$recipient" < "$attachment"
+    echo "Rapporten skickad"
 }
 
-
-# Kontrollerar om filen är läsbar
 # Om någon fil inte finns eller saknar läsbehörighetet, skriver ett felmeddelande och avslutar skriptet
 check_file_readable() {
 	local file="$1"
@@ -174,7 +172,7 @@ check_file_writable "$ACTIONLOG_FILE"
 check_file_writable "$SUSSPECTLOG_FILE"
 check_file_writable "$TMP_FILE"
 check_file_writable "$REPORT_FILE"
-check_file_writable "$TMP_FILE"
+check_file_writable "$LOG"
 
 # Skapar datumsträng för 24 timmar bakåt formaterat på samma format som i våra loggfiler(ISO-8601)
 SINCE=$(date -d '48 hours ago' --iso-8601=seconds)
@@ -207,11 +205,13 @@ done
 
 # Kontrollerar om "authentication failure" förekommer och skriver ut IP, användare tid och övrig info till logfil
 awk '/authentication failure/ {
-    match($0, /^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+)/, ts)
-    match($0, /rhost=([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/, ip)
-    match($0, /user=([a-zA-Z0-9._-]+)/, usr)
+    match($0, /^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+)/, ts)       #Datum och tid
+    match($0, /rhost=([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/, ip)         #IP-adress
+    match($0, /user=([a-zA-Z0-9._-]+)/, usr)                        #Användarnamn
+    match($0, /([a-zA-Z]+[0-9]+)/, proto)                           #Protokoll
+
     if (ip[1] && usr[1] && ts[1]) {
-        print ip[1], usr[1], ts[1]
+        print ip[1], usr[1], ts[1], "Protocol" proto[1]
     }
 }' "$SUSSPECTLOG_FILE" > "$LOG"
 
