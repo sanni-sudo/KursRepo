@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#Skapat av: Sanna Nilsson, 9 april 2025 
-#Namn: Övervakning och analys av säkerhetsloggar på Ubuntu Server
-#Skapar ett Bash-skript som övervakar och analyserar säkerhetsloggar på 
-#Ubuntu Server (/var/log/auth.log och /var/log/syslog) för att identifiera, 
-#rapportera och reagera på misstänkt aktivitet.
+# Skapat av: Sanna Nilsson, 9 april 2025 
+# Namn: Övervakning och analys av säkerhetsloggar på Ubuntu Server
+# Skapar ett Bash-skript som övervakar och analyserar säkerhetsloggar på 
+# Ubuntu Server (/var/log/auth.log och /var/log/syslog) för att identifiera, 
+# rapportera och reagera på misstänkt aktivitet.
 
-#---------------Konfiguration - Variabler för Loggar och Rapporter
+#---------------Konfiguration - Variabler för Loggar och Rapporter ---------------------
 
 readonly SYSLOG_FILE="/var/log/syslog"            # Sökväg till loggfilen som ska analyseras 
 readonly AUTHLOG_FILE="/var/log/auth.log"         # Sökväg till loggfilen som ska analyseras 
@@ -14,51 +14,52 @@ readonly REPORT_FILE="security_report_$(date +%Y%m%d).txt" # Fil där analysrapp
 readonly TMP_FILE="/tmp/sec_watch_$$.tmp"         # $$ är process-ID för att undvika konflikter i temporära filer
 readonly ACTIONLOG_FILE="/var/log/security_actions_$$.log"       # Loggar åtgärden om blockerade ip:n med ufw
 readonly ARCHIVEDIR="/backup/logs"           # Hit arkiveras och komprimeras loggar
-readonly ADMINMAIL="testkali@testkalilinuxcl-2" # Hit mejlas rapporten till administratören
-readonly THRESHOLD=5                            # Anger tröskelvärde för försök innan ip:n räknas som "hög risk"
-readonly LOG="log.txt"                            #Loggfil för att samla "authentication failure"
+readonly ADMINMAIL="sakadmin@sakadmin-1" # Hit mejlas rapporten till administratören
+readonly THRESHOLD=20                           # Anger tröskelvärde för försök innan ip:n räknas som "hög risk"
+readonly LOG_FILE="log.txt"                            #Loggfil för att samla "authentication failure"
 readonly SUSSPECTLOG_FILE="susspect_log.txt"      #Loggfil för misstänkta inloggningsförsök
 
 # readonly gör variablerna skrivskyddade för säkerhet, dvs värdet ska inte ändras senare i skriptet 
 
-#----------------Säkerhetsåtgärder - Felhantering och avbrott
+#----------------Säkerhetsåtgärder - Felhantering och avbrott ----------------------
 # set -e avbryter skriptet om ett fel uppstår
 # set -u avbryter skriptet om man försöker använda en variabel som inte finns
-# trap skriver ut meddelande om något avbryter eller tycker på Ctrl+C
-# Detta skyddar mot oväntade problem och rensar upp vid avbrott. 
-
-#set -e 
-#set -u  
-#trap 'echo "Skript Avbrutet!"; rm -f "$TMP_FILE"; exit 1' INT TERM EXIT
+# När skriptet avslutas (EXIT), avbryts med Ctrl+C (INT), eller termineras av 
+# ett annat program (TERM), så anropas funktionen 'cleanup' automatiskt för att 
+# ta bort temporära filer och avsluta snyggt. Detta skyddar mot oväntade problem och rensar upp vid avbrott. 
+# 
+set -e 
+set -u  
+trap cleanup INT TERM EXIT
 
  
 
-#-----------------Funktioner - Loggning och Varningar
+#-----------------Funktioner - Loggning och Varningar ---------------------
 
 # Loggar meddelanden med tidsstämpel
 
 log_message() {
-	local level="$1"          # INFO, WARNING, ERROR
-	local message="$2"
-  printf "%s [%s] %s:\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$message" >> "$REPORT_FILE"
+    local level="$1"
+    local message="$2"
+
+       printf "%s [%s] %s:\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$message" >> "$REPORT_FILE"
 }
 
-# Skicka en rapport till SäkAdmin
-send_mail_with_attachment() {
+# Skickar en rapport till SäkAdmin
+send_mail_with_report() {
     local subject="Daglig rapportfil Linux servermiljö"
-    #local body="Här kommer den dagliga genererade loggfilen med misstänkta inloggningsförsök"
     local recipient="$ADMINMAIL"  
-    local attachment="$REPORT_FILE"     
+    local report="$REPORT_FILE"     
 
   
-    # Kontrollera att rapporten verkligen finns
-    if [[ ! -f "$attachment" ]]; then
-        echo "[ERROR] Rapporten saknas: $attachment"
+    # Kontrollerar att rapporten verkligen finns
+    if [[ ! -f "$report" ]]; then
+        echo "[ERROR] Rapporten saknas: $report"
         return 1
     fi
 
-    # Skicka meddelande med rapportinnehållet
-    mail -s "$subject" "$recipient" < "$attachment"
+    # Skickar meddelande med rapportinnehållet
+    mail -s "$subject" "$recipient" < "$report"
     echo "Rapporten skickad"
 }
 
@@ -112,10 +113,10 @@ count_risk() {
 }' "$input_file"
 
 
-    # Läs från tempfilen som bara innehåller fler än THRESHOLD försök --> HÖG RISK
-    # Skriv till rapportfil
+    # Läser från tempfilen som bara innehåller fler än THRESHOLD försök --> HÖG RISK
+    # Skriver till rapportfil
     while IFS= read -r line; do
-        log_message "HÖG RISK" "$line"
+        log_message "HÖG RISK" ": $line"
         ip=$(echo "$line" | grep -oP 'IP:\s*\K[\d\.]+')
         attempts=$(echo "$line" | grep -oP 'Attempts:\s*\K\d+')
     done < "$temp_warnings"
@@ -134,36 +135,51 @@ block_ip() {
 archive_logs() {
     # Definiera loggfil och destination
     local archive_name="security_logs_backup_$(date +%Y%m%d).tar"
+    local archive_path="$ARCHIVEDIR/$archive_name"
 
-    # Skapa målarkivkatalog om den inte finns
+    # Skapar arkivkatalog om den inte finns
     mkdir -p "$ARCHIVEDIR"
 
-    # Hitta loggar som är äldre än 7 dagar och arkivera dem
-    find /var/log -type f -name "security_actions_*.log" -mtime +7 -exec tar -rvf "$ARCHIVEDIR/$archive_name" {} \; -exec rm -f {} \;
+    # Hittar loggar som är äldre än 7 dagar
+    local old_logs
+    old_logs=$(find /var/log -type f -name "security_actions_*.log" -mtime +7)
 
-    # Skriv ut ett meddelande
-    echo "[INFO] Loggar äldre än 7 dagar har arkiverats till $ARCHIVEDIR/$archive_name."
+    # Om det finns filer att arkivera
+    if [[ -n "$old_logs" ]]; then
+        # Skapar arkivet
+        tar -cvf "$archive_path" "$old_logs"
+
+        # Kontrollerar att arkivet skapades
+        if [[ -f "$archive_path" ]]; then
+            # Raderar de arkiverade filerna
+            echo "$old_logs" | xargs rm -f
+            echo "[INFO] Loggar äldre än 7 dagar har arkiverats och raderats: $archive_path"
+        else
+            echo "[ERROR] Arkiv kunde inte skapas. Inga filer raderades."
+        fi
+    else
+        echo "[INFO] Inga gamla loggar hittades att arkivera."
+    fi
 }
 
-#Städar tmp-filer
-#cleanup() {
-#rm -f "$TMP_FILE"
-#log_message "INFO" "Rensade temporära filer"
-#Tömmer rapportfilen
-#> "$REPORT_FILE"
-#exit 0
-#}
 
+# Städar tmp-filer
+cleanup() {
+    rm -f "$TMP_FILE"
+    log_message "INFO" "Rensade temporära filer"
+    exit 0
+}
 
 # ------------------- Huvudlogik - Kontrollerar, Filtrerar och Analyserar Loggar --------------
 
 # Skapar temporär arbetsfil där vi sparar loggrader för analys
 touch "$TMP_FILE"
 touch "$REPORT_FILE"
-#Tömmer rapportfilen om vi kört testet mer än en gång de senaste 24 timmarna.
-> "$REPORT_FILE"
-# Kontrollerar att båda loggfilenra existerar och är läsbara
 
+#Tömmer rapportfilen om vi kört testet mer än en gång de senaste 24 timmarna
+> "$REPORT_FILE"
+
+# Kontrollerar att båda loggfilenra existerar och är läsbara
 check_file_readable "$AUTHLOG_FILE"
 check_file_readable "$SYSLOG_FILE"
 
@@ -172,15 +188,15 @@ check_file_writable "$ACTIONLOG_FILE"
 check_file_writable "$SUSSPECTLOG_FILE"
 check_file_writable "$TMP_FILE"
 check_file_writable "$REPORT_FILE"
-check_file_writable "$LOG"
+check_file_writable "$LOG_FILE"
 
 # Skapar datumsträng för 24 timmar bakåt formaterat på samma format som i våra loggfiler(ISO-8601)
-SINCE=$(date -d '48 hours ago' --iso-8601=seconds)
+SINCE=$(date -d '24 hours ago' --iso-8601=seconds)
 
 # Skriver generell info till rapportfilen
 log_message "INFO" "Extraherar loggar från senaste 24 timmar"
 log_message "INFO" "Starttid: $SINCE"
-log_message "INFO""---------------------------------------------"
+log_message "INFO" "---------------------------------------------"
 
 # Tar syslog och auth.log från de senaste 24 h och skriver dem till en temporär fil
 # Denna temporära fil används sedan för att filtrera ut misstänkta händelser
@@ -190,7 +206,7 @@ awk -v since="$SINCE" '{
 }' "$AUTHLOG_FILE" "$SYSLOG_FILE" > "$TMP_FILE"
 
 # Extraherar relevanta rader från temporär fil och skickar 
-grep -E "password check failed|authentication failure|Invalid user|session opened" "$TMP_FILE" > "$SUSSPECTLOG_FILE"
+grep -E "password check failed|authentication failure|Invalid user|Accepted password|session opened" "$TMP_FILE" > "$SUSSPECTLOG_FILE"
 
 # Kontrollerar om "Invalid user" förekommer och skriver ut IP, användare tid och övrig info till rapportfil
 # Om "Invalid user" förekommer blockeras denna IP i ufw på första förekomsten
@@ -203,7 +219,7 @@ grep "Invalid user" "$SUSSPECTLOG_FILE" | while read -r line; do
     echo "Blocked IP: $ip"
 done
 
-# Kontrollerar om "authentication failure" förekommer och skriver ut IP, användare tid och övrig info till logfil
+# Kontrollerar om "authentication failure" förekommer och skriver ut IP, användare tid och övrig info till loggfil
 awk '/authentication failure/ {
     match($0, /^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+)/, ts)       #Datum och tid
     match($0, /rhost=([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/, ip)         #IP-adress
@@ -213,21 +229,20 @@ awk '/authentication failure/ {
     if (ip[1] && usr[1] && ts[1]) {
         print ip[1], usr[1], ts[1], "Protocol" proto[1]
     }
-}' "$SUSSPECTLOG_FILE" > "$LOG"
+}' "$SUSSPECTLOG_FILE" > "$LOG_FILE"
 
-#För varje rad i loggfilen skriver vi ut WARNING och information till rapportfilen
+# För varje rad i loggfilen skriver vi ut WARNING och information till rapportfilen
 while read -r ip user timestamp; do
   log_message "MEDEL RISK" "Misslyckad inloggning! IP: $ip | User: $user | Time: $timestamp"
-done < "$LOG"
+done < "$LOG_FILE"
 
 # Räknar hur många authentication failures varje unik IP finns i loggfilen
-count_risk "$LOG"
+count_risk "$LOG_FILE"
 
 # Maila rapport till säkadmin
-send_mail_with_attachment
+send_mail_with_report
 echo "[INFO] Rapport genererad: $REPORT_FILE"
 echo "[KLART] Säkerhetsanalys slutförd. Rapport sparad i $REPORT_FILE."
 
 # Arkivera loggar äldre än 7 dagar
 archive_logs
-
