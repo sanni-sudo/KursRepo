@@ -1,0 +1,27 @@
+2025-04-21 20:17:14 [INFO] Filen 'C:\KursRepo\security_hardening_20250421.log' skapades eftersom den inte fanns.
+2025-04-21 20:17:15 [INFO] === Windows Defender brandväggsstatus per profil ===
+2025-04-21 20:17:15 [INFO] Defenderprofilen Domain: AKTIV
+2025-04-21 20:17:15 [INFO] Defenderprofilen Private: AKTIV
+2025-04-21 20:17:15 [INFO] Defenderprofilen Public: AKTIV
+2025-04-21 20:17:15 [INFO] === Sätter brandväggsregeler för inbound trafik ===
+2025-04-21 20:17:16 [INFO] Blockerar allt inkommande med brandväggen
+2025-04-21 20:17:16 [INFO] Tillåt HTTPS port 443
+2025-04-21 20:17:16 [INFO] Tillåt RDP port 3389
+2025-04-21 20:17:16 [INFO] Tillåt SSH port 22
+2025-04-21 20:17:16 [INFO] Tillåt DHCP port 67
+2025-04-21 20:17:16 [INFO] Endast HTTPS (443), RDP (3389), SSH (22), och DHCP (67) är tillåtna. All annan trafik har blockerats.
+2025-04-21 20:17:17 [INFO] === Microsoft Defender Uppdateringsstatus ===
+2025-04-21 20:17:17 [INFO] Senaste uppdatering: 04/21/2025 07:14:05
+2025-04-21 20:17:17 [INFO] Signaturversion: 1.427.357.0
+2025-04-21 20:17:17 [INFO] Aktuella signaturer för defender
+2025-04-21 20:17:18 [INFO] === Kontrollerar konton som inte använts de senaste 90 ===
+2025-04-21 20:17:18 [INFO] Inga inaktiva användare att låsa.
+2025-04-21 20:17:18 [INFO] === Kontrollerar osäkert protokoll SMBv1 ===
+2025-04-21 20:17:18 [INFO] SMBv1 är inaktiverat som standard (ingen registerpost hittades).
+2025-04-21 20:17:18 [INFO] === Inaktiverar FTP och Telnet då de är osäkra protokoll ===
+2025-04-21 20:17:18 [INFO] FTP-tjänsten är inte installerad.
+2025-04-21 20:17:18 [INFO] Telnet-tjänsten är inte installerad.
+2025-04-21 20:17:18 [INFO] === Kontrollerar tillgängligt diskutrymme ===
+2025-04-21 20:17:18 [INFO] Enhet C har 67% ledigt utrymme.
+2025-04-21 20:17:18 [INFO] === Kontrollerar och aktiverar BitLocker ===
+2025-04-21 20:17:20 [INFO] BitLocker är redan aktiverat på C:.
