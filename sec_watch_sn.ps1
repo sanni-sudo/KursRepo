@@ -9,11 +9,17 @@
 # Namn på brandväggsprofiler som ska konfigureras
 $FirewallProfiles = @("Domain", "Private", "Public")
 
-# Lista på portar som ska tillåtas (exempel: RDP=3389, HTTPS=443)
-$AllowedPorts = @(3389, 443)
+# Lista på portar som ska tillåtas (TCP)
+$AllowedTCPPorts = @(3389, 443, 53)     # RDP, HTTPS, DNS (TCP)
 
-# Protokoll för reglerna
-$Protocol = "TCP"
+# Lista på portar som ska tillåtas (UDP)
+$AllowedUDPPorts = @(53, 67,68)         # DNS (UDP), DHCP
+
+# Protokoll - används om vi kör samma protokoll för flera portar
+# Eftersom vissa portar (DNS) används med både TCP och UDP, och DHCP använder endast UDP,
+# är det bra att hålla isär dem för tydligheten
+$ProtocolTCP = "TCP"
+$ProtocolUDP = "UDP"
 
 #----------------Funktioner---------------------------
 
@@ -22,45 +28,45 @@ function Enable-WindowsFirewall {
     param (
         [string[]]$Profiles = @("Domain", "Private", "Public")
     )
+    # Kontrollerar brandväggsstatus för varje profil och aktiverar den om den är inaktiv
     foreach ($profile in $Profiles) {
         $status = (Get-NetFirewallProfile -Profile $profile).Enabled
 
         if ($status -eq $false) {
             Set-NetFirewallProfile -Profile $profile -Enabled True
             Write-Host "$profile-branväggen har aktiverats"
-        }
+            }
+    # Skriver ut ett meddelande för varje profil
         else {
             Write-Host "$profile-branväggen är redan aktiv."
         }
     }
 }
 
-# Aktiverar brandväggen för angivna profiler (Domain, Private, Public)
-function Enable-AllFirewallProfiles {
-    param (
-        [string[]]$Profiles
-        )
-
-    foreach ($profile in $Profiles) {
-        Set-NetFirewallProfile -Profile $profile -Enabled True #-WhatIf
-        #Write-Host "[TEST] Skulle aktivera brandvägg för: $profile"
-        Write-Host "$profile brandvägg har aktiverats"
-    }
-}
-
-# Tillåter specifika portar för angivet protokoll (t.ex. TCP)
-function Enable-AllowPorts {
-    param (
-        [int[]]$Ports,
-        [string]$Protocol
-    )
-
-    foreach ($port in $Ports) {
-        New-NetFirewallRule -DisplayName "Allow Port $port" -Direction Inbound -Action Allow -Protocol $Protocol -LocalPort $port -Profile Any #-WhatIf
-        #Write-Host "[TEST] Skulle skapa regel för port $port via $Protocol"
+# Tillåter specifika portar för angivet protokoll 
+# Tillåter RDP och HTTPS (TCP) protokoll
+function Enable-AllowRequiredPorts {
+        $tcpPorts = @(3389, 443)
+#    param (
+#        [int[]]$Ports,
+#        [string]$Protocol
+#    )
+        foreach ($port in $tcpPorts) {
+        New-NetFirewallRule -DisplayName "Allow TCP $port" -Direction Inbound -Protocol TCP -LocalPort $port -Action Allow -Profile Any 
         Write-Host "Tillåter port $port för $Protocol"
     }
+# DNS (TCP och UDP)
+New-NetFirewallRule -DisplayName "Allow DNS TCP" -Direction Inbound -Protocol TCP -LocalPort 53 -Action Allow -Profile Any
+New-NetFirewallRule -DisplayName "Allow DNS UDP" -Direction Inbound -Protocol UDP -LocalPort 53 -Action Allow -Profile Any
+
+# DHCP (UDP port 67-68)
+New-NetFirewallRule -DisplayName "Allow DHCP Client" -Direction Inbound -Protocol UDP -LocalPort 67,68 -Action Allow -Profile Any
 }
+
+#function Block-AllOtherInbound {
+    # Blockera all annan inkommande trafik
+#    New-NetFirewallRule -DisplayName "Block All Other Inbound" -Direction Inbound -Action Block -Profile Any
+#}
 
 # Funktion för att kontrollera och aktivera Windows Defender
 function Get-WindowsDefenderStatus {
@@ -96,7 +102,9 @@ function Get-WindowsDefenderStatus {
 # -------------------- Huvudlogiken--------------------------
 Enable-WindowsFirewall 
 #Enable-AllFirewallProfiles -Profiles $FirewallProfiles
-#Enable-AllowPorts -Ports $AllowedPorts -Protocol $Protocol 
+Enable-AllowPorts -Ports $AllowedTCPPorts -Protocol $ProtocolTCP 
+Enable-AllowPorts -Ports $AllowedUDPPorts -Protocol $ProtocolUDP 
+#Block-AllOtherInbound
 
 # Slår på brandväggen för varje profil (Domain, Privat, Public)
 # Tillåter RDP (3389) och HTTPS (443) med TCP-protokollet
