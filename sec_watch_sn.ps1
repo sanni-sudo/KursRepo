@@ -125,7 +125,7 @@ function Get-WindowsDefenderStatus {
     
     # Kontrollerar om Windows Defender är aktiverat
     if ($DefenderStatus.AntivirusEnabled -eq $false) {
-        Write-Host "Windows Defender är inte aktiverat. Vi aktiverar det nu..."
+        #Write-Host "Windows Defender är inte aktiverat. Vi aktiverar det nu..."
         Set-MpPreference -DisableRealtimeMonitoring $false
         #Write-Host "Windows Defender är nu aktiverat."
         log_message "WARNING" "Windows Defender var inte aktivt - aktiverades."
@@ -144,14 +144,24 @@ function Get-WindowsDefenderStatus {
         #Write-Host "Definitionsfilerna har nu uppdaterats."
         log_message "INFO" "Definitionsfilerna har nu uppdaterats."
 
+    # Startar fullständig skanning
         #Write-Host "Startar en fullständig skanning..."
         Start-MpScan -ScanType FullScan
         log_message "INFO" "Fullständig skanning startad."
+    # Vänta och kontrollera om skanningen körs
+        Start-Sleep -Seconds 5  # Ge lite tid för skanning att starta
+        $ScanStatus = Get-MpComputerStatus
+        if ($ScanStatus.FullScanAge -eq 0) {
+            log_message "INFO" "Fullständig skanning är pågående eller nyligen genomförd."
+        } elseif ($ScanStatus.FullScanAge -gt 0) {
+            log_message "INFO" "Fullständig skanning avslutades för $($ScanStatus.FullScanAge) dagar sedan."
+        } else {
+            log_message "WARNING" "Kunde inte bekräfta om skanningen avslutades korrekt."
+        }
     } else {
-        #Write-Host "Definitionsfilerna är aktuella. Ingen skanning behövs."
         log_message "INFO" "Definitionsfilerna är aktuella. Ingen skanning utförd."
     }
-}     
+}
 
 # Funktion för att aktivera brandväggsprofiler ()
 
