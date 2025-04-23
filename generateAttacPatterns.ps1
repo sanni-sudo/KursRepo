@@ -53,8 +53,8 @@ while ((Get-Date) -lt $end_time) {
     }
 
     # 4. Hög volym mot ett mål
-    if ((Get-Random -Minimum 1 -Maximum 100) -lt 20) {
-        Write-LogEntry -src_ip (Get-RandomIP) -dst_ip $dst_spam_ip -port ($common_ports + @(8080, 8443) | Get-Random) -protocol ($protocols | Get-Random)
+    for ($j = 0; $j -lt (Get-Random -Minimum 2 -Maximum 4); $j++) {
+        Write-LogEntry -src_ip $heavy_src_ip -dst_ip (Get-RandomIP) -port ($common_ports | Get-Random) -protocol ($protocols | Get-Random)
     }
 
     Start-Sleep -Milliseconds 1000
