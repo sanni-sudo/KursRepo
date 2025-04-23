@@ -10,16 +10,13 @@
 #$FirewallProfiles = @("Domain", "Private", "Public")
 
 # Lista på portar som ska tillåtas (TCP)
-$AllowedTCPPorts = @(3389, 443, 53)     # RDP, HTTPS, DNS (TCP)
-
-# Lista på portar som ska tillåtas (UDP)
-$AllowedUDPPorts = @(53, 67, 68)         # DNS (UDP), DHCP
+$AllowedTCPPorts = @(3389, 443)  # RDP, HTTPS
 
 # Protokoll - används om vi kör samma protokoll för flera portar
 # Eftersom vissa portar (DNS) används med både TCP och UDP, och DHCP använder endast UDP,
 # är det bra att hålla isär dem för tydligheten
-$ProtocolTCP = "TCP"
-$ProtocolUDP = "UDP"
+#$ProtocolTCP = "TCP"
+#$ProtocolUDP = "UDP"
 
 # Loggar alla åtgärder och resultat i loggfilen
 $LogFile = "security_hardening_$(Get-Date -Format 'yyyyMMdd').log"
@@ -66,36 +63,55 @@ function Enable-WindowsFirewall {
 
         if ($status -eq $false) {
             Set-NetFirewallProfile -Profile $profile -Enabled True
-            Write-Host "$profile-branväggen har aktiverats"
+            #Write-Host "$profile-branväggen har aktiverats"
             log_message "WARNING" "$profile-branväggen har aktiverats"
             }
     # Skriver ut ett meddelande för varje profil
         else {
-            Write-Host "$profile-branväggen är redan aktiv."
+            #Write-Host "$profile-branväggen är redan aktiv."
             log_message "INFO" "$profile-branväggen är redan aktiv"
         }
     }
 }
 
 # Tillåter specifika portar för angivet protokoll 
-# Tillåter RDP och HTTPS (TCP) protokoll
+# Tillåter RDP och HTTPS (TCP)
 function Enable-AllowRequiredPorts {
-        $tcpPorts = @(3389, 443)
-#    param (
-#        [int[]]$Ports,
-#        [string]$Protocol
-#    )
-        foreach ($port in $tcpPorts) {
-        New-NetFirewallRule -DisplayName "Allow TCP $port" -Direction Inbound -Protocol TCP -LocalPort $port -Action Allow -Profile Any 
-        Write-Host "Tillåter port $port för $Protocol"
+    # Tillåter TCP för RDP (3389) och HTTPS (443)
+    foreach ($port in $AllowedTCPPorts) {
+        $ruleName = "Allow TCP $port"
+        if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
+            New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Protocol TCP -LocalPort $port -Action Allow -Profile Any
+            log_message "INFO" "Tillåter port $port för TCP"
+        } else {
+            log_message "INFO" "Regeln för TCP-port $port finns redan"
+        }
     }
-# DNS (TCP och UDP)
-New-NetFirewallRule -DisplayName "Allow DNS TCP" -Direction Inbound -Protocol TCP -LocalPort 53 -Action Allow -Profile Any
-New-NetFirewallRule -DisplayName "Allow DNS UDP" -Direction Inbound -Protocol UDP -LocalPort 53 -Action Allow -Profile Any
+    # Tillåter DNS (TCP port 53)
+    if (-not (Get-NetFirewallRule -DisplayName "Allow DNS TCP" -ErrorAction SilentlyContinue)) {
+        New-NetFirewallRule -DisplayName "Allow DNS TCP" -Direction Inbound -Protocol TCP -LocalPort 53 -Action Allow -Profile Any
+        log_message "INFO" "DNS TCP-regel skapades"
+    } else {
+        log_message "INFO" "Regeln för DNS TCP finns redan"
+    }
 
-# DHCP (UDP port 67-68)
-New-NetFirewallRule -DisplayName "Allow DHCP Client" -Direction Inbound -Protocol UDP -LocalPort 67,68 -Action Allow -Profile Any
+    # Tillåter DNS (UDP port 53)
+    if (-not (Get-NetFirewallRule -DisplayName "Allow DNS UDP" -ErrorAction SilentlyContinue)) {
+        New-NetFirewallRule -DisplayName "Allow DNS UDP" -Direction Inbound -Protocol UDP -LocalPort 53 -Action Allow -Profile Any
+        log_message "INFO" "DNS UDP-regel skapades"
+    } else {
+    log_message "INFO" "Regeln för DNS UDP finns redan"
+    }
+
+    # Tillåter DHCP Client (UDP portar 67-68)
+    if (-not (Get-NetFirewallRule -DisplayName "Allow DHCP Client" -ErrorAction SilentlyContinue)) {
+        New-NetFirewallRule -DisplayName "Allow DHCP Client" -Direction Inbound -Protocol UDP -LocalPort @(67,68) -Action Allow -Profile Any
+        log_message "INFO" "DHCP-regel skapades"
+    } else {
+    log_message "INFO" "Regeln för DHCP finns redan"
+    }
 }
+
 
 #function Block-AllOtherInbound {
     # Blockera all annan inkommande trafik
@@ -111,38 +127,46 @@ function Get-WindowsDefenderStatus {
     if ($DefenderStatus.AntivirusEnabled -eq $false) {
         Write-Host "Windows Defender är inte aktiverat. Vi aktiverar det nu..."
         Set-MpPreference -DisableRealtimeMonitoring $false
-        Write-Host "Windows Defender är nu aktiverat."
+        #Write-Host "Windows Defender är nu aktiverat."
+        log_message "WARNING" "Windows Defender var inte aktivt - aktiverades."
     } else {
-        Write-Host "Windows Defender är redan aktiverat."
+        #Write-Host "Windows Defender är redan aktiverat."
+        log_message "INFO" "Windows Defender är redan aktiverat."
     }
+    
     # Kontrollerar om definitionsfilerna är uppdaterade
+    # Om Windows Defender är inte uppdaterat startar en fullständig skanning
     if ($DefenderStatus.AntivirusSignatureLastUpdated -lt (Get-Date).AddDays(-1)) {
-        Write-Host "Windows Defender definitionsfiler är inte uppdaterade. Vi uppdaterar dem nu..."
+        #Write-Host "Windows Defender definitionsfiler är inte uppdaterade. Vi uppdaterar dem nu..."
+        log_message "WARNING" "Definitionsfilerna var gamla - uppdateras nu."
+
         Update-MpSignature
-        Write-Host "Definitionsfilerna har nu uppdaterats."
-        Write-Host "Startar en fullständig skanning..."
+        #Write-Host "Definitionsfilerna har nu uppdaterats."
+        log_message "INFO" "Definitionsfilerna har nu uppdaterats."
+
+        #Write-Host "Startar en fullständig skanning..."
         Start-MpScan -ScanType FullScan
+        log_message "INFO" "Fullständig skanning startad."
     } else {
-        Write-Host "Windows Defender definitionsfiler är redan uppdaterade."
-        Write-Host "Signaturerna är uppdaterade. Ingen skanning behövs."
-        Write-Host "Signaturerna är aktuella. Ingen skanning utförd."
+        #Write-Host "Definitionsfilerna är aktuella. Ingen skanning behövs."
+        log_message "INFO" "Definitionsfilerna är aktuella. Ingen skanning utförd."
     }
-} 
+}     
 
 # Funktion för att aktivera brandväggsprofiler ()
 
 # -------------------- Huvudlogiken--------------------------
 
 create_logfile
+log_message
 Enable-WindowsFirewall 
 #Enable-AllFirewallProfiles -Profiles $FirewallProfiles
-Enable-AllowPorts -Ports $AllowedTCPPorts -Protocol $ProtocolTCP 
-Enable-AllowPorts -Ports $AllowedUDPPorts -Protocol $ProtocolUDP 
+Enable-AllowRequiredPorts
 #Block-AllOtherInbound
 
 # Slår på brandväggen för varje profil (Domain, Privat, Public)
 # Tillåter RDP (3389) och HTTPS (443) med TCP-protokollet
 
 # Kontrollerar och härdar Windows Defender
-#Get-WindowsDefenderStatus
+Get-WindowsDefenderStatus
 

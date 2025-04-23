@@ -1,4 +1,13 @@
-2025-04-23 06:46:28 [INFO] Loggfilen tömd
-2025-04-23 06:46:29 [INFO] Domain-branväggen är redan aktiv
-2025-04-23 06:46:29 [INFO] Private-branväggen är redan aktiv
-2025-04-23 06:46:29 [INFO] Public-branväggen är redan aktiv
+2025-04-23 12:18:24 [INFO] Loggfilen tömd
+2025-04-23 12:18:24 [] 
+2025-04-23 12:18:25 [INFO] Domain-branväggen är redan aktiv
+2025-04-23 12:18:25 [INFO] Private-branväggen är redan aktiv
+2025-04-23 12:18:25 [INFO] Public-branväggen är redan aktiv
+2025-04-23 12:18:26 [INFO] Regeln för TCP-port 3389 finns redan
+2025-04-23 12:18:26 [INFO] Regeln för TCP-port 443 finns redan
+2025-04-23 12:18:27 [INFO] Regeln för DNS TCP finns redan
+2025-04-23 12:18:28 [INFO] Regeln för DNS UDP finns redan
+2025-04-23 12:18:29 [INFO] Regeln för DHCP finns redan
+2025-04-23 12:18:29 [INFO] Windows Defender är redan aktiverat.
+2025-04-23 12:18:29 [WARNING] Definitionsfilerna var gamla - uppdateras nu.
+2025-04-23 12:20:14 [INFO] Definitionsfilerna har nu uppdaterats.
