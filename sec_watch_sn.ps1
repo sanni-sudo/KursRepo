@@ -7,13 +7,13 @@
 #---------------Konfiguration - Variabler för Loggar och Rapporter-------------------
 
 # Namn på brandväggsprofiler som ska konfigureras
-$FirewallProfiles = @("Domain", "Private", "Public")
+#$FirewallProfiles = @("Domain", "Private", "Public")
 
 # Lista på portar som ska tillåtas (TCP)
 $AllowedTCPPorts = @(3389, 443, 53)     # RDP, HTTPS, DNS (TCP)
 
 # Lista på portar som ska tillåtas (UDP)
-$AllowedUDPPorts = @(53, 67,68)         # DNS (UDP), DHCP
+$AllowedUDPPorts = @(53, 67, 68)         # DNS (UDP), DHCP
 
 # Protokoll - används om vi kör samma protokoll för flera portar
 # Eftersom vissa portar (DNS) används med både TCP och UDP, och DHCP använder endast UDP,
@@ -21,7 +21,39 @@ $AllowedUDPPorts = @(53, 67,68)         # DNS (UDP), DHCP
 $ProtocolTCP = "TCP"
 $ProtocolUDP = "UDP"
 
+# Loggar alla åtgärder och resultat i loggfilen
+$LogFile = "security_hardening_$(Get-Date -Format 'yyyyMMdd').log"
+
 #----------------Funktioner---------------------------
+
+#Funktion för att skriva till loggfil
+#Parameter 1: log level INFO, WARNING, ERROR eller valfri text
+#Parameter 2: Meddelandet som skall skrivas till logfilen
+function log_message {
+    param (
+        [string]$log_level,
+        [string]$message
+    )
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $log_entry = "$timestamp [$log_level] $message"
+    
+    # Skriv till loggfilen
+    Add-Content -Path $LogFile -Value $log_entry
+}
+
+function create_logfile {
+    # Kontrollera om filen finns
+    if (Test-Path $LogFile) {
+        # Töm innehållet 
+            Clear-Content -Path $LogFile
+            log_message "INFO" "Loggfilen tömd"
+        } else {
+        # Skapa filen om den inte fanns
+            New-Item -Path $LogFile -ItemType File | Out-Null
+            log_message "INFO" "Skapat loggfilen $LogFile"
+        }
+}
 
 # Kontrollerar om brandväggen är aktiv
 function Enable-WindowsFirewall {
@@ -35,10 +67,12 @@ function Enable-WindowsFirewall {
         if ($status -eq $false) {
             Set-NetFirewallProfile -Profile $profile -Enabled True
             Write-Host "$profile-branväggen har aktiverats"
+            log_message "WARNING" "$profile-branväggen har aktiverats"
             }
     # Skriver ut ett meddelande för varje profil
         else {
             Write-Host "$profile-branväggen är redan aktiv."
+            log_message "INFO" "$profile-branväggen är redan aktiv"
         }
     }
 }
@@ -86,20 +120,20 @@ function Get-WindowsDefenderStatus {
         Write-Host "Windows Defender definitionsfiler är inte uppdaterade. Vi uppdaterar dem nu..."
         Update-MpSignature
         Write-Host "Definitionsfilerna har nu uppdaterats."
-    } else {
-        Write-Host "Windows Defender definitionsfiler är redan uppdaterade."
-    }
-    # Om definitionsfilerna inte är uppdaterade, startar en fullständig skanning
-    if ($DefenderStatus.AntivirusSignatureLastUpdated -lt (Get-Date).AddDays(-1)) {
         Write-Host "Startar en fullständig skanning..."
         Start-MpScan -ScanType FullScan
-        Write-Host "Fullständig skanning har startat."
+    } else {
+        Write-Host "Windows Defender definitionsfiler är redan uppdaterade."
+        Write-Host "Signaturerna är uppdaterade. Ingen skanning behövs."
+        Write-Host "Signaturerna är aktuella. Ingen skanning utförd."
     }
-}
+} 
 
 # Funktion för att aktivera brandväggsprofiler ()
 
 # -------------------- Huvudlogiken--------------------------
+
+create_logfile
 Enable-WindowsFirewall 
 #Enable-AllFirewallProfiles -Profiles $FirewallProfiles
 Enable-AllowPorts -Ports $AllowedTCPPorts -Protocol $ProtocolTCP 
