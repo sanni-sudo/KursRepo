@@ -330,13 +330,13 @@ function Disable-UnnecessaryServices {
         try {
             $service = Get-Service -Name $serviceName -ErrorAction Stop
             if ($service.Status -ne 'Stopped') {
-                log_message "WARNING" "Stoppar tjänsten $($service.DisplayName)..."
+                log_message "INFO" "Stoppar tjänsten $($service.DisplayName)..."
                 Stop-Service -Name $serviceName -Force
             }
             log_message "INFO" "Inaktiverar tjänsten $($service.DisplayName)..."
             Set-Service -Name $serviceName -StartupType Disabled
         } catch {
-            log_message "ERROR" "Tjänsten '$serviceName' hittades inte eller kunde inte hanteras: $_"
+            log_message "WARNING" "Tjänsten '$serviceName' hittades inte eller kunde inte hanteras: $_"
         }
     }
 }
@@ -364,5 +364,5 @@ create_logfile
 # Inaktiverar osäkra protokoll, SMBv1
 #Disable-InsecureProtocols
 # Inaktiverar onödiga tjänster, Telnet och FTP
-Disable-UnnecessaryServices
+#Disable-UnnecessaryServices
 # 

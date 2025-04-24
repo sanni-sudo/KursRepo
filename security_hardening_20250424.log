@@ -1,3 +1,4 @@
-2025-04-24 16:33:40 [INFO] Loggfilen tömd
-2025-04-24 16:33:42 [ERROR] Tjänsten 'TlntSvr' hittades inte eller kunde inte hanteras: Cannot find any service with service name 'TlntSvr'.
-2025-04-24 16:33:42 [ERROR] Tjänsten 'FTPSVC' hittades inte eller kunde inte hanteras: Cannot find any service with service name 'FTPSVC'.
+2025-04-24 17:44:09 [INFO] Loggfilen tömd
+2025-04-24 17:44:09 [ERROR] Tjänsten 'TlntSvr' hittades inte eller kunde inte hanteras: Cannot find any service with service name 'TlntSvr'.
+2025-04-24 17:44:09 [WARNING] Stoppar tjänsten Microsoft FTP Service...
+2025-04-24 17:44:10 [INFO] Inaktiverar tjänsten Microsoft FTP Service...
