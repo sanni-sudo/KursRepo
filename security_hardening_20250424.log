@@ -1,0 +1,23 @@
+2025-04-24 09:40:41 [INFO] Loggfilen tömd
+2025-04-24 09:40:41 [INFO] Domain-branväggen är redan aktiv
+2025-04-24 09:40:41 [INFO] Private-branväggen är redan aktiv
+2025-04-24 09:40:41 [INFO] Public-branväggen är redan aktiv
+2025-04-24 09:40:42 [INFO] Regeln för TCP-port 3389 finns redan
+2025-04-24 09:40:43 [INFO] Regeln för TCP-port 443 finns redan
+2025-04-24 09:40:43 [INFO] Regeln för DNS TCP finns redan
+2025-04-24 09:40:44 [INFO] Regeln för DNS UDP finns redan
+2025-04-24 09:40:45 [INFO] Regeln för DHCP finns redan
+2025-04-24 09:40:45 [INFO] Windows Defender är redan aktiverat.
+2025-04-24 09:40:45 [INFO] Definitionsfilerna är aktuella. Ingen skanning utförd.
+2025-04-24 09:40:46 [INFO] Analyserar medlemmar i Administrators-gruppen...
+2025-04-24 09:40:46 [Analyserar medlemmar i Administrators-gruppen...] 
+2025-04-24 09:40:46 [WARNING] TestUser4 är INTE godkänd
+2025-04-24 09:40:46 [WARNING] TestUser3 är INTE godkänd
+2025-04-24 09:40:46 [INFO] HelpdeskAdmins är godkänd
+2025-04-24 09:40:46 [INFO] ServerAdmin01 är godkänd
+2025-04-24 09:40:46 [INFO] SecAdmin-Server01 är godkänd
+2025-04-24 09:40:47 [INFO] TestUser4 var inte godkänd och har tagits bort från Administrators-gruppen
+2025-04-24 09:40:47 [INFO] TestUser3 var inte godkänd och har tagits bort från Administrators-gruppen
+2025-04-24 09:40:47 [INFO] HelpdeskAdmins är godkänd och behålls i gruppen
+2025-04-24 09:40:47 [INFO] ServerAdmin01 är godkänd och behålls i gruppen
+2025-04-24 09:40:47 [INFO] SecAdmin-Server01 är godkänd och behålls i gruppen
