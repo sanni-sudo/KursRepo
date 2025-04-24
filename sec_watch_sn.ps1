@@ -340,8 +340,49 @@ function Disable-UnnecessaryServices {
         }
     }
 }
+# Implementerar en funktion som kontrollerar diskens lediga utrymme
+# och flyttar temporära filer till en arkivmapp om det lediga utrymmet är under 15 %
+
+function Move-TempFilesIfLowSpace {
+    param (
+        [string]$TempFolder = "C:\Windows\Temp",
+        [string]$ArchiveFolder = "C:\TempBackup",
+        [int]$Threshold = 70
+    )
+
+    # Hämtar volumen baserat på enhetsbeteckningen (t.ex. "C") istället för etiketten.
+    $driveLetter = (Get-Item $TempFolder).PSDrive.Name
+    $volume = Get-Volume -DriveLetter $driveLetter
 
 
+    # Beräkna procentuell ledig plats
+    if ($volume.Size -gt 0) {
+        $freeSpacePercent = [math]::Round(($volume.SizeRemaining / $volume.Size) * 100, 2)
+    } else {
+        log_message "ERROR" "Volymstorleken är 0, kan inte beräkna ledigt utrymme."
+    }
+
+    # Kontrollera om ledigt utrymme är under tröskelvärdet
+    if ($freeSpacePercent -lt $Threshold) {
+        log_message "INFO" "Ledigt utrymme är under $Threshold%. Flyttar temporära filer..."
+
+        # Skapa arkivmappen om den inte finns
+        if (-not (Test-Path -Path $ArchiveFolder)) {
+            New-Item -Path $ArchiveFolder -ItemType Directory
+        }
+
+        # Flytta temporära filer till arkivmappen
+        Get-ChildItem -Path $TempFolder -Recurse | ForEach-Object {
+            $destination = Join-Path -Path $ArchiveFolder -ChildPath $_.Name
+            Move-Item -Path $_.FullName -Destination $destination -Force
+            log_message "INFO" "Flyttade: $($_.FullName) till $destination"
+        }
+
+        log_message "INFO" "Flytt av temporära filer slutförd."
+    } else {
+        log_message "INFO" "Tillräckligt med ledigt utrymme ($freeSpacePercent%) finns. Ingen åtgärd vidtogs."
+    }
+}
 # -------------------- Huvudlogiken--------------------------
 
 create_logfile
@@ -365,4 +406,6 @@ create_logfile
 #Disable-InsecureProtocols
 # Inaktiverar onödiga tjänster, Telnet och FTP
 #Disable-UnnecessaryServices
-# 
+# Kontrollerar om det lediga utrymmet på volymen där C:\Windows\Temp finns är under 15 %. 
+# Om så är fallet, flyttas alla filer från den mappen till D:\TempBackup.
+Move-TempFilesIfLowSpace #-TempFolder "C:\Windows\Temp" -ArchiveFolder "C:\TempBackup" -Threshold 70

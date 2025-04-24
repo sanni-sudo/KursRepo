@@ -1,4 +1,5 @@
-2025-04-24 17:44:09 [INFO] Loggfilen tömd
-2025-04-24 17:44:09 [ERROR] Tjänsten 'TlntSvr' hittades inte eller kunde inte hanteras: Cannot find any service with service name 'TlntSvr'.
-2025-04-24 17:44:09 [WARNING] Stoppar tjänsten Microsoft FTP Service...
-2025-04-24 17:44:10 [INFO] Inaktiverar tjänsten Microsoft FTP Service...
+2025-04-24 18:48:42 [INFO] Loggfilen tömd
+2025-04-24 18:48:43 [INFO] Ledigt utrymme är under 70%. Flyttar temporära filer...
+2025-04-24 18:48:43 [INFO] Flyttade: C:\Windows\Temp\testdok1.txt till C:\TempBackup\testdok1.txt
+2025-04-24 18:48:43 [INFO] Flyttade: C:\Windows\Temp\testdok2.txt till C:\TempBackup\testdok2.txt
+2025-04-24 18:48:43 [INFO] Flytt av temporära filer slutförd.
