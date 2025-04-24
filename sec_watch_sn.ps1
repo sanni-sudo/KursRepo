@@ -235,32 +235,45 @@ foreach ($member in $AdminGroupMembers) {
     }
 }
 }
+
+# Inaktiverar konton som inte använts på 90 dagar
 function Disable-InactiveUsers {
     param (
         [int]$InactiveDays = 90,
         [string]$LogPath = "C:\Users\Administrator\Documents\KursRepo\disabled_users.log"
     )
 
-    # Beräkna datumgränsen
-    $thresholdDate = (Get-Date).AddDays(-$InactiveDays)
+    # Kontrollera om loggfilen finns; om inte, skapa den
+    if (-not (Test-Path -Path $LogPath)) {
+        try {
+            New-Item -Path $LogPath -ItemType File -Force | Out-Null
+            log_message "INFO" "Loggfil skapad på: $LogPath"
+        } catch {
+            log_message "ERROR" "Fel vid skapande av loggfil: $_"
+            return
+        }
+    }
 
-    # Hämta användare som är aktiva och har en LastLogonDate äldre än tröskeldatumet
-    $inactiveUsers = Get-ADUser -Filter {
-        Enabled -eq $true -and LastLogonDate -lt $thresholdDate
-    } -Properties LastLogonDate
+    # Hämta användare som varit inaktiva i angivet antal dagar
+    try {
+        $inactiveUsers = Search-ADAccount -AccountInactive -UsersOnly -TimeSpan (New-TimeSpan -Days $InactiveDays)
+    } catch {
+        log_message "ERROR" "Fel vid sökning av inaktiva användare: $_"
+        return
+    }
 
     foreach ($user in $inactiveUsers) {
         try {
             # Inaktivera användarkontot
             Disable-ADAccount -Identity $user.SamAccountName -Confirm:$false
 
-            # Logga åtgärden
-            $logEntry = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Inaktiverade användare: $($user.SamAccountName), senast inloggad: $($user.LastLogonDate)"
+            # Logga åtgärden med tidsstämpel
+            $logEntry = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Inaktiverade användare: $($user.SamAccountName)"
             Add-Content -Path $LogPath -Value $logEntry
 
-            log_message "INFO" "Inaktiverade användare: $($user.SamAccountName)" -ForegroundColor Yellow
+            log_message "INFO" "Inaktiverade användare: $($user.SamAccountName)"
         } catch {
-            log_message "ERROR" "Fel vid inaktivering av användare: $($user.SamAccountName). Felmeddelande: $_" -ForegroundColor Red
+            log_message "ERROR" "Fel vid inaktivering av användare $($user.SamAccountName): $_"
         }
     }
 }
@@ -332,24 +345,24 @@ function Disable-UnnecessaryServices {
 # -------------------- Huvudlogiken--------------------------
 
 create_logfile
-Enable-WindowsFirewall 
+#Enable-WindowsFirewall 
 #Enable-AllFirewallProfiles -Profiles $FirewallProfiles
-Enable-AllowRequiredPorts
+#Enable-AllowRequiredPorts
 #Block-AllOtherInbound
 
 # Slår på brandväggen för varje profil (Domain, Privat, Public)
 # Tillåter RDP (3389) och HTTPS (443) med TCP-protokollet
 
 # Kontrollerar och härdar Windows Defender
-Get-WindowsDefenderStatus
+#Get-WindowsDefenderStatus
 # Listar användare i AD Administrators-gruppen
-Get-ApprovedUsers
+#Get-ApprovedUsers
 # Tar bort icke-godkända användare
-Remove-UnapprovedUsers
+#Remove-UnapprovedUsers
 # Inaktiverar konton som inte använts på 90 dagar
 #Disable-InactiveUsers
 # Inaktiverar osäkra protokoll, SMBv1
-Disable-InsecureProtocols
+#Disable-InsecureProtocols
 # Inaktiverar onödiga tjänster, Telnet och FTP
 Disable-UnnecessaryServices
 # 
