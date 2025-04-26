@@ -6,32 +6,23 @@
 
 #---------------Konfiguration - Variabler för Loggar och Rapporter-------------------
 
-# Namn på brandväggsprofiler som ska konfigureras
-#$FirewallProfiles = @("Domain", "Private", "Public")
-
 # Lista på portar som ska tillåtas (TCP)
 $AllowedTCPPorts = @(3389, 443)  # RDP, HTTPS
-
-# Protokoll - används om vi kör samma protokoll för flera portar
-# Eftersom vissa portar (DNS) används med både TCP och UDP, och DHCP använder endast UDP,
-# är det bra att hålla isär dem för tydligheten
-#$ProtocolTCP = "TCP"
-#$ProtocolUDP = "UDP"
 
 # Loggar alla åtgärder och resultat i loggfilen
 $LogFile = "security_hardening_$(Get-Date -Format 'yyyyMMdd').log"
 
 #----------------Funktioner---------------------------
 
-#Funktion för att skriva till loggfil
-#Parameter 1: log level INFO, WARNING, ERROR eller valfri text
-#Parameter 2: Meddelandet som skall skrivas till logfilen
+# Funktionen för att skriva till loggfilen
+# Parameter 1: log level INFO, WARNING, ERROR eller valfri text
+# Parameter 2: Meddelandet som skall skrivas till loggfilen
 function log_message {
     param (
         [string]$log_level,
         [string]$message
     )
-
+    # Tidsstämplar för varje händelse som skrivs i loggfilen
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $log_entry = "$timestamp [$log_level] $message"
     
@@ -39,20 +30,22 @@ function log_message {
     Add-Content -Path $LogFile -Value $log_entry
 }
 
+# Funktionen för att kontrollera, tömma eller skapa loggfilen
 function create_logfile {
-    # Kontrollera om filen finns
+    # Kontrollerar om loggfilen finns
     if (Test-Path $LogFile) {
-        # Töm innehållet 
+        # Tömmer innehållet 
             Clear-Content -Path $LogFile
             log_message "INFO" "Loggfilen tömd"
         } else {
-        # Skapa filen om den inte fanns
+        # Skapar loggfilen om den inte fanns
             New-Item -Path $LogFile -ItemType File | Out-Null
             log_message "INFO" "Skapat loggfilen $LogFile"
         }
 }
 
-# Kontrollerar om brandväggen är aktiv
+# Funktionen för att kontrollera om brandväggen är aktiv
+# Namn på brandväggsprofiler som ska konfigureras: "Domain", "Private" och "Public"
 function Enable-WindowsFirewall {
     param (
         [string[]]$Profiles = @("Domain", "Private", "Public")
@@ -63,19 +56,25 @@ function Enable-WindowsFirewall {
 
         if ($status -eq $false) {
             Set-NetFirewallProfile -Profile $profile -Enabled True
-            #Write-Host "$profile-branväggen har aktiverats"
-            log_message "WARNING" "$profile-branväggen har aktiverats"
+            log_message "INFO" "$profile-branväggen har aktiverats"
             }
     # Skriver ut ett meddelande för varje profil
-        else {
-            #Write-Host "$profile-branväggen är redan aktiv."
+        else {           
             log_message "INFO" "$profile-branväggen är redan aktiv"
         }
     }
 }
 
-# Tillåter specifika portar för angivet protokoll 
-# Tillåter RDP och HTTPS (TCP)
+# Funktionen att blockera all inkommande trafik
+function Block-AllOtherInbound {
+    # Blockerar all inkommande trafik
+    New-NetFirewallRule -DisplayName "Block All Other Inbound" -Direction Inbound -Action Block -Profile Any
+    
+    # Loggar åtgärden
+    log_message "INFO" "Brandväggsregel 'Block All Other Inbound' skapad - all inkommande trafik blockeras."
+}
+
+# Funktionen att tillåta specifika portar för angivet protokoll, t.ex. RDP och HTTPS (TCP)
 function Enable-AllowRequiredPorts {
     # Tillåter TCP för RDP (3389) och HTTPS (443)
     foreach ($port in $AllowedTCPPorts) {
@@ -94,7 +93,6 @@ function Enable-AllowRequiredPorts {
     } else {
         log_message "INFO" "Regeln för DNS TCP finns redan"
     }
-
     # Tillåter DNS (UDP port 53)
     if (-not (Get-NetFirewallRule -DisplayName "Allow DNS UDP" -ErrorAction SilentlyContinue)) {
         New-NetFirewallRule -DisplayName "Allow DNS UDP" -Direction Inbound -Protocol UDP -LocalPort 53 -Action Allow -Profile Any
@@ -102,7 +100,6 @@ function Enable-AllowRequiredPorts {
     } else {
         log_message "INFO" "Regeln för DNS UDP finns redan"
     }
-
     # Tillåter DHCP Client (UDP portar 67-68)
     if (-not (Get-NetFirewallRule -DisplayName "Allow DHCP Client" -ErrorAction SilentlyContinue)) {
         New-NetFirewallRule -DisplayName "Allow DHCP Client" -Direction Inbound -Protocol UDP -LocalPort @(67,68) -Action Allow -Profile Any
@@ -112,43 +109,30 @@ function Enable-AllowRequiredPorts {
     }
 }
 
-#function Block-AllOtherInbound {
-    # Blockera all annan inkommande trafik
-#    New-NetFirewallRule -DisplayName "Block All Other Inbound" -Direction Inbound -Action Block -Profile Any
-#}
-
-# Funktion för att kontrollera och aktivera Windows Defender
+# Funktionen för att kontrollera och aktivera Windows Defender
 function Get-WindowsDefenderStatus {
     # Hämtar information om Windows Defender
     $DefenderStatus = Get-MpComputerStatus
     
     # Kontrollerar om Windows Defender är aktiverat
     if ($DefenderStatus.AntivirusEnabled -eq $false) {
-        #Write-Host "Windows Defender är inte aktiverat. Vi aktiverar det nu..."
         Set-MpPreference -DisableRealtimeMonitoring $false
-        #Write-Host "Windows Defender är nu aktiverat."
         log_message "WARNING" "Windows Defender var inte aktivt - aktiverades."
     } else {
-        #Write-Host "Windows Defender är redan aktiverat."
         log_message "INFO" "Windows Defender är redan aktiverat."
     }
-    
     # Kontrollerar om definitionsfilerna är uppdaterade
-    # Om Windows Defender är inte uppdaterat startar en fullständig skanning
     if ($DefenderStatus.AntivirusSignatureLastUpdated -lt (Get-Date).AddDays(-1)) {
-        #Write-Host "Windows Defender definitionsfiler är inte uppdaterade. Vi uppdaterar dem nu..."
         log_message "WARNING" "Definitionsfilerna var gamla - uppdateras nu."
         Update-MpSignature
-        #Write-Host "Definitionsfilerna har nu uppdaterats."
         log_message "INFO" "Definitionsfilerna har nu uppdaterats."
 
-    # Startar fullständig skanning
-        #Write-Host "Startar en fullständig skanning..."
+    # Om Windows Defender är inte uppdaterat startar en fullständig skanning
         Start-MpScan -ScanType FullScan
         log_message "INFO" "Fullständig skanning startad."
 
-    # Vänta och kontrollera om skanningen körs
-        Start-Sleep -Seconds 5  # Ge lite tid för skanning att starta
+    # Väntar och kontrollerar om skanningen körs
+        Start-Sleep -Seconds 5           # Ger lite tid för skanning att starta
         $ScanStatus = Get-MpComputerStatus
 
         if ($ScanStatus.FullScanAge -eq 0) {
@@ -156,18 +140,19 @@ function Get-WindowsDefenderStatus {
         } elseif ($ScanStatus.FullScanAge -gt 0) {
             log_message "INFO" "Fullständig skanning avslutades för $($ScanStatus.FullScanAge) dagar sedan."
         } else {
-            log_message "WARNING" "Kunde inte bekräfta om skanningen avslutades korrekt."
+            log_message "ERROR" "Kunde inte bekräfta om skanningen avslutades korrekt."
         }
     } else {
         log_message "INFO" "Definitionsfilerna är aktuella. Ingen skanning utförd."
     }
 }
 
-# Funktion för att lista användare i Administrators-gruppen
+# Funktionen för att lista användare i Administrators-gruppen
 function Get-ApprovedUsers {
-    # Sökväg till listan med godkända användare 
-    $ApprovedUsersPath = "C:\Users\Administrator\Documents\KursRepo\approved_usesrs.txt"
-    # Försök läsa in filen med godkända användare och jämföra dem med listan
+    # Sökväg till filen med godkända användare 
+    $ApprovedUsersPath = "C:\Users\Administrator\Documents\KursRepo\approved_users.txt"
+    
+    # Försöker läsa in listan över godkända användare från filen
     try {
     $ApprovedUsers = Get-Content -Path $ApprovedUsersPath -ErrorAction Stop
     } catch [System.IO.FileNotFoundException] {
@@ -178,21 +163,22 @@ function Get-ApprovedUsers {
     return
     }
     
-    # Försök hämta medlemmar i Administrators-gruppen
+    # Försöker hämta medlemmar i AD Administrators-gruppen
     try {
     $AdminGroupMembers = Get-ADGroupMember -Identity "Administrators" -ErrorAction Stop | Select-Object -ExpandProperty Name
     } catch {
-    log_message "ERROR" "Ett fel uppstod vid hämtning av gruppmedlemmar: $($_.Exception.Message)" -ForegroundColor Red
+    log_message "ERROR" "Ett fel uppstod vid hämtning av AD gruppmedlemmar: $($_.Exception.Message)" -ForegroundColor Red
     return
     }
   
     # Läser in filen som en lista
     $ApprovedUsers = Get-Content -Path $ApprovedUsersPath
-    # Hämtar användare i Administrators-gruppen
+    
+    # Hämtar användare i AD Administrators-gruppen
     $AdminGroupMembers =  Get-ADGroupMember -Identity "Administrators" | Select-Object -ExpandProperty Name
-    log_message "INFO" "Analyserar medlemmar i Administrators-gruppen..." -ForegroundColor Cyan
+    log_message "INFO" "Analyserar medlemmar i AD Administrators-gruppen..." -ForegroundColor Cyan
 
-    # Jämför användarna 
+    # Jämför varje medlem mot listan av godkända användare
     foreach ($member in $AdminGroupMembers) {
         if ($ApprovedUsers -contains $member) {
             log_message "INFO" "$member är godkänd" -ForegroundColor Green
@@ -228,7 +214,7 @@ foreach ($member in $AdminGroupMembers) {
     } else {
         try {
             Remove-ADGroupMember -Identity "Administrators" -Members $member -Confirm:$false -ErrorAction Stop
-            log_message "INFO" "$memberName var inte godkänd och har tagits bort från Administrators-gruppen" -ForegroundColor Red
+            log_message "WARNING" "$memberName var inte godkänd och har tagits bort från Administrators-gruppen" -ForegroundColor Red
         } catch {
             log_message "ERROR" "Kunde inte ta bort $memberName från gruppen: $($_.Exception.Message)" -ForegroundColor Red
         }
@@ -236,14 +222,13 @@ foreach ($member in $AdminGroupMembers) {
 }
 }
 
-# Inaktiverar konton som inte använts på 90 dagar
+# Funktionen att avaktivera konton som inte använts på 90 dagar
 function Disable-InactiveUsers {
     param (
         [int]$InactiveDays = 90,
         [string]$LogPath = "C:\Users\Administrator\Documents\KursRepo\disabled_users.log"
     )
-
-    # Kontrollera om loggfilen finns; om inte, skapa den
+    # Kontrollerar om loggfilen finns; om inte, skapar den
     if (-not (Test-Path -Path $LogPath)) {
         try {
             New-Item -Path $LogPath -ItemType File -Force | Out-Null
@@ -253,77 +238,60 @@ function Disable-InactiveUsers {
             return
         }
     }
-
-    # Hämta användare som varit inaktiva i angivet antal dagar
+    # Hämtar användare som varit inaktiva i angivet antal dagar
     try {
         $inactiveUsers = Search-ADAccount -AccountInactive -UsersOnly -TimeSpan (New-TimeSpan -Days $InactiveDays)
     } catch {
         log_message "ERROR" "Fel vid sökning av inaktiva användare: $_"
         return
     }
-
     foreach ($user in $inactiveUsers) {
         try {
-            # Inaktivera användarkontot
+            # Avaktiverar användarkonton
             Disable-ADAccount -Identity $user.SamAccountName -Confirm:$false
 
-            # Logga åtgärden med tidsstämpel
-            $logEntry = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Inaktiverade användare: $($user.SamAccountName)"
+            # Loggar åtgärden med tidsstämpel 
+            $logEntry = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Avaktiverade användare: $($user.SamAccountName)"
             Add-Content -Path $LogPath -Value $logEntry
 
-            log_message "INFO" "Inaktiverade användare: $($user.SamAccountName)"
+            log_message "INFO" "Avaktiverade användare: $($user.SamAccountName)"
         } catch {
-            log_message "ERROR" "Fel vid inaktivering av användare $($user.SamAccountName): $_"
+            log_message "ERROR" "Fel vid avaktivering av användare $($user.SamAccountName): $_"
         }
     }
 }
-
-   # foreach ($member in $AdminGroupMembers) {
-    #    if ($ApprovedUsers -notcontains $member.SamAccountName) {
-     #       try {
-      #          Remove-ADGroupMember -Identity "Administrators" -Members $member -Confirm:$false -ErrorAction Stop
-       #         log_message "INFO" "$($member.SamAccountName) har tagits bort från Administrators-gruppen" -ForegroundColor Yellow
-        #    } catch {
-         #       log_message "ERROR" "Kunde inte ta bort $($member.SamAccountName): $($_.Exception.Message)" -ForegroundColor Red
-          #  }
-       # } else {
-       #     log_message "INFO" "$($member.SamAccountName) är godkänd och behålls i gruppen" -ForegroundColor Green
-       # }
-   # }
-#}
-
-# Inaktiverar osäkra protokoll som SMBv1 via registerändringar.
-# Kontrollerar och inaktiverar SMBv1-protokollet genom att ändra relevanta registerinställningar.
-# Kräver administratörsbehörighet.
+# Avaktiverar osäkra protokoll som SMBv1 via registerändringar.
+# Kontrollerar och avaktiverar SMBv1-protokollet genom att ändra relevanta registerinställningar.
+# Dessa konfigurationer kräver administratörsbehörighet.
 function Disable-InsecureProtocols {
     # Kontrollerar om SMBv1 är aktiverat
     try {
         $smb1Status = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name SMB1 -ErrorAction Stop
         if ($smb1Status.SMB1 -eq 1) {
-            log_message "INFO" "SMBv1 är aktiverat. Försöker inaktivera..." -ForegroundColor Yellow
-            # Inaktivera SMBv1
+            log_message "WARNING" "SMBv1 är aktiverat. Försöker avaktivera..." -ForegroundColor Yellow
+            # Avaktiverar SMBv1
             Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name SMB1 -Type DWORD -Value 0 -Force
-            log_message "INFO" "SMBv1 har inaktiverats. En omstart krävs för att ändringen ska träda i kraft." -ForegroundColor Green
+            log_message "INFO" "SMBv1 har avaktiverats. En omstart krävs för att ändringen ska träda i kraft." -ForegroundColor Green
         } else {
             log_message "INFO" "SMBv1 är redan inaktiverat." -ForegroundColor Green
         }
     } catch {
         log_message "WARNING" "SMBv1-registernyckeln hittades inte. SMBv1 kan vara aktiverat som standard." -ForegroundColor Red
-        # Skapa och inaktivera SMBv1
+        # Skapar och avaktiverar SMBv1
         try {
             New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name SMB1 -PropertyType DWORD -Value 0 -Force
-            log_message "INFO" "SMBv1 har inaktiverats genom att skapa registernyckeln. En omstart krävs för att ändringen ska träda i kraft." -ForegroundColor Green
+            log_message "INFO" "SMBv1 har avaktiverats genom att skapa registernyckeln. En omstart krävs för att ändringen ska träda i kraft." -ForegroundColor Green
         } catch {
-            log_message "ERROR" "Misslyckades med att skapa och inaktivera SMBv1-registernyckeln: $_" -ForegroundColor Red
+            log_message "ERROR" "Misslyckades med att skapa och avaktivera SMBv1-registernyckeln: $_" -ForegroundColor Red
         }
     }
 }
 
-# Stoppar och inaktiverar onödiga tjänster som Telnet och FTP.
+# Funktionen att stoppa och avaktivera onödiga tjänster som Telnet och FTP.
 # kontrollerar om specifika tjänster är installerade, stoppar dem om de körs 
-# och inaktiverar dem för att förbättra systemets säkerhet.
+# och avaktiverar dem för att förbättra systemets säkerhet.
 function Disable-UnnecessaryServices {
-      # Lista över tjänster att inaktivera
+      # Lista över tjänster att avaktivera
     $servicesToDisable = @("TlntSvr", "FTPSVC")         # TlntSvr = Telnet, FTPSVC = FTP
 
     foreach ($serviceName in $servicesToDisable) {
@@ -333,16 +301,16 @@ function Disable-UnnecessaryServices {
                 log_message "INFO" "Stoppar tjänsten $($service.DisplayName)..."
                 Stop-Service -Name $serviceName -Force
             }
-            log_message "INFO" "Inaktiverar tjänsten $($service.DisplayName)..."
+            log_message "INFO" "Avaktiverar tjänsten $($service.DisplayName)..."
             Set-Service -Name $serviceName -StartupType Disabled
         } catch {
             log_message "WARNING" "Tjänsten '$serviceName' hittades inte eller kunde inte hanteras: $_"
         }
     }
 }
-# Implementerar en funktion som kontrollerar diskens lediga utrymme
-# och flyttar temporära filer till en arkivmapp om det lediga utrymmet är under 15 %
 
+# Funktionen att kontrollera diskens lediga utrymme
+# och flytta temporära filer till en arkivmapp om det lediga utrymmet är under 15 %
 function Move-TempFilesIfLowSpace {
     param (
         [string]$TempFolder = "C:\Windows\Temp",
@@ -355,16 +323,16 @@ function Move-TempFilesIfLowSpace {
     $volume = Get-Volume -DriveLetter $driveLetter
 
 
-    # Beräkna procentuell ledig plats
+    # Beräknar procentuell ledig plats
     if ($volume.Size -gt 0) {
         $freeSpacePercent = [math]::Round(($volume.SizeRemaining / $volume.Size) * 100, 2)
     } else {
         log_message "ERROR" "Volymstorleken är 0, kan inte beräkna ledigt utrymme."
     }
 
-    # Kontrollera om ledigt utrymme är under tröskelvärdet
+    # Kontrollerar om ledigt utrymme är under tröskelvärdet
     if ($freeSpacePercent -lt $Threshold) {
-        log_message "INFO" "Ledigt utrymme är under $Threshold%. Flyttar temporära filer..."
+        log_message "WARNING" "Ledigt utrymme är under $Threshold%. Flyttar temporära filer..."
 
         # Skapa arkivmappen om den inte finns
         if (-not (Test-Path -Path $ArchiveFolder)) {
@@ -377,12 +345,12 @@ function Move-TempFilesIfLowSpace {
             Move-Item -Path $_.FullName -Destination $destination -Force
             log_message "INFO" "Flyttade: $($_.FullName) till $destination"
         }
-
         log_message "INFO" "Flytt av temporära filer slutförd."
     } else {
         log_message "INFO" "Tillräckligt med ledigt utrymme ($freeSpacePercent%) finns. Ingen åtgärd vidtogs."
     }
 }
+
 # -------------------- Huvudlogiken--------------------------
 
 create_logfile
