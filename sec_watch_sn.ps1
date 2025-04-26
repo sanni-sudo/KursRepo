@@ -353,26 +353,25 @@ function Move-TempFilesIfLowSpace {
 
 # -------------------- Huvudlogiken--------------------------
 
+# Kontrollerar, tömmer eller skapar loggfilen
 create_logfile
-#Enable-WindowsFirewall 
-#Enable-AllFirewallProfiles -Profiles $FirewallProfiles
+# Kontrollerar brandväggens status för varje profil (Domain, Private, Public) och slåt på brandväggen 
+#Enable-WindowsFirewall
+# Strikta brandväggsregeln som blockerar all inkommande trafik
+#Block-AllOtherInbound 
+# Specifika brandväggsregler som tillåter RDP (3389), HTTPS (443), DNS (53) och DHCP (67-68)  
 #Enable-AllowRequiredPorts
-#Block-AllOtherInbound
-
-# Slår på brandväggen för varje profil (Domain, Privat, Public)
-# Tillåter RDP (3389) och HTTPS (443) med TCP-protokollet
-
 # Kontrollerar och härdar Windows Defender
 #Get-WindowsDefenderStatus
 # Listar användare i AD Administrators-gruppen
 #Get-ApprovedUsers
-# Tar bort icke-godkända användare
+# Tar bort icke-godkända användare från Active Directory-grupp
 #Remove-UnapprovedUsers
-# Inaktiverar konton som inte använts på 90 dagar
+# Avaktiverar konton som inte använts på 90 dagar
 #Disable-InactiveUsers
-# Inaktiverar osäkra protokoll, SMBv1
+# Avaktiverar osäkra protokoll, SMBv1
 #Disable-InsecureProtocols
-# Inaktiverar onödiga tjänster, Telnet och FTP
+# Avaktiverar onödiga tjänster, Telnet och FTP
 #Disable-UnnecessaryServices
 # Kontrollerar om det lediga utrymmet på volymen där C:\Windows\Temp finns är under 15 %. 
 # Om så är fallet, flyttas alla filer från den mappen till D:\TempBackup.
