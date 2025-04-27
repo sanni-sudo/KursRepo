@@ -192,7 +192,7 @@ function Get-ApprovedUsers {
 # Jämför medlemmarna i gruppen med en lista över godkända användare och ta bort de som inte finns med på listan.
 function Remove-UnapprovedUsers {
     param (
-        [string]$ApprovedUsersPath = "C:\Users\Administrator\Documents\KursRepo\approved_usesrs.txt"
+        [string]$ApprovedUsersPath = "C:\Users\Administrator\Documents\KursRepo\approved_users.txt"
     )
     try {
         $ApprovedUsers = Get-Content -Path $ApprovedUsersPath -ErrorAction Stop
@@ -315,7 +315,7 @@ function Move-TempFilesIfLowSpace {
     param (
         [string]$TempFolder = "C:\Windows\Temp",
         [string]$ArchiveFolder = "C:\TempBackup",
-        [int]$Threshold = 70
+        [int]$Threshold = 15
     )
 
     # Hämtar volumen baserat på enhetsbeteckningen (t.ex. "C") istället för etiketten.
@@ -345,78 +345,26 @@ function Move-TempFilesIfLowSpace {
             Move-Item -Path $_.FullName -Destination $destination -Force
             log_message "INFO" "Flyttade: $($_.FullName) till $destination"
         }
-        log_message "INFO" "Flytt av temporära filer slutförd."
+            log_message "INFO" "Flytt av temporära filer slutförd."
     } else {
-        log_message "INFO" "Tillräckligt med ledigt utrymme ($freeSpacePercent%) finns. Ingen åtgärd vidtogs."
+            log_message "INFO" "Tillräckligt med ledigt utrymme ($freeSpacePercent%) finns. Ingen åtgärd vidtogs."
     }
 }
 
 # Funktionen att aktivera och konfigurera BitLocker på systemdisken (c:)
 function Enable-SystemDriveBitLocker {
-#    param (
-#        [string]$RecoveryKeyPath = "C:\BitLockerRecovery"
-#        )
-        # Kontrollerar om TPM är tillgänglig och aktiverad
- #       $tpm = Get-Tpm
- #       if (-not $tpm.TpmPresent -or -not $tpm.TpmReady) {
- #           log_message "ERROR" "TPM är inte tillgänglig eller inte redo. BitLocker kan inte aktiveras." -ForegroundColor Red
- #       return
- #       }
-        # Kontrollerar om återställningsnyckelns sökväg finns, annars skapar den
- #       if (-not (Test-Path -Path $RecoveryKeyPath)) {
- #           try {
- #               New-Item -Path $RecoveryKeyPath -ItemType Directory -Force | Out-Null
- #               log_message "INFO" "Återställningsnyckelns mapp skapad på: $RecoveryKeyPath" -ForegroundColor Green 
- #           } catch {
- #               log_message "ERROR" "Fel vid skapande av återställningsnyckelns mapp: $_" -ForegroundColor Red
- #               return       
-<#
-.SYNOPSIS
-Short description
-
-.DESCRIPTION
-Long description
-
-.EXAMPLE
-An example
-
-.NOTES
-General notes
-#> #          }
- #           }
-        # Hämtar alla volumer och itererar över dem
-        $volumes = Get-BitLockerVolume
+        
+    # Hämtar alla volumer och itererar över dem
+    $volumes = Get-BitLockerVolume
         foreach ($volume in $volumes) {
-            # Kontrollerar om volumen är systemdisken (C:)
+        # Kontrollerar om volumen är systemdisken (C:)
             if ($volume.MountPoint -eq "C:" -and $volume.ProtectionStatus -ne "On") {
-#            if ($volume.MountPoint -eq "C:") {
- #               if ($volume.ProtectionStatus -eq "On") {
- #                   log_message "INFO" "BitLocker är redan aktiverat på $($volume.MountPoint)." -ForegroundColor Yellow
- #           } else {
- #               try {
-                    Enable-BitLocker -MountPoint $volume.MountPoint -TmpProtector -UsedSpaceOnly -SkipHardwareTest                                             
-                    log_message "INFO" "BitLocker har aktiverats på $($volume.MountPoint)." -ForegroundColor Green 
-                } elseif ($volume.MountPoint -eq "C:") { 
-                    log_message "INFO" "BitLocker är redan aktiverat på $($volume.MountPoint)." -ForegroundColor Yellow                }
-            
+            Enable-BitLocker -MountPoint $volume.MountPoint -TmpProtector -UsedSpaceOnly -SkipHardwareTest                                             
+            log_message "INFO" "BitLocker har aktiverats på $($volume.MountPoint)." -ForegroundColor Green 
+            } elseif ($volume.MountPoint -eq "C:") { 
+            log_message "INFO" "BitLocker är redan aktiverat på $($volume.MountPoint)." -ForegroundColor Yellow                }   
         }
     }
-# Sammanfattning till administratören i konsolen
-Write-Host "`n---------- Sammanfattning av säkerhetskontroll ----------" -ForegroundColor Cyan
-
-Write-Host "- Brandväggsprofiler kontrollerade och aktiverade" -ForegroundColor Green
-Write-Host "- All annan inkommande trafik blockerad" -ForegroundColor Green
-Write-Host "- Tillåtna portar öppnade: $($AllowedTCPPorts -join ', ')" -ForegroundColor Green
-Write-Host "- Windows Defender kontrollerad och härdad" -ForegroundColor Green
-Write-Host "- Administratörsanvändare i AD kontrollerade" -ForegroundColor Green
-Write-Host "- Icke-godkända användare borttagna" -ForegroundColor Green
-Write-Host "- Inaktiva användare inaktiverade" -ForegroundColor Green
-Write-Host "- Osäkra protokoll och onödiga tjänster inaktiverade" -ForegroundColor Green
-Write-Host "- Temporära filer flyttade vid låg diskutrymme om nödvändigt" -ForegroundColor Green
-Write-Host "- BitLocker kontrollerad och aktiverad om det behövdes" -ForegroundColor Green
-
-Write-Host "`nSäkerhetskontrollen och härdningen är slutförd!" -ForegroundColor Yellow
-
 # -------------------- Huvudlogiken--------------------------
 
 # Kontrollerar, tömmer eller skapar loggfilen
@@ -444,3 +392,19 @@ Disable-UnnecessaryServices
 Move-TempFilesIfLowSpace 
 # Aktiverar och konfigurerar BitLocker på systemdisken (C:) om den inte redan är aktiverat. 
 Enable-SystemDriveBitLocker 
+
+# Sammanfattning till administratören i konsolen
+Write-Host "`n---------- Sammanfattning av säkerhetskontroll ----------" -ForegroundColor Cyan
+
+Write-Host "- Brandväggsprofiler kontrollerade och aktiverade" -ForegroundColor Green
+Write-Host "- All annan inkommande trafik blockerad" -ForegroundColor Green
+Write-Host "- Tillåtna portar öppnade: $($AllowedTCPPorts -join ', ')" -ForegroundColor Green
+Write-Host "- Windows Defender kontrollerad och härdad" -ForegroundColor Green
+Write-Host "- Administratörsanvändare i AD kontrollerade" -ForegroundColor Green
+Write-Host "- Icke-godkända användare borttagna" -ForegroundColor Green
+Write-Host "- Inaktiva användare inaktiverade" -ForegroundColor Green
+Write-Host "- Osäkra protokoll och onödiga tjänster inaktiverade" -ForegroundColor Green
+Write-Host "- Temporära filer flyttade vid låg diskutrymme om nödvändigt" -ForegroundColor Green
+Write-Host "- BitLocker kontrollerad och aktiverad om det behövdes" -ForegroundColor Green
+
+Write-Host "`nSäkerhetskontrollen och härdningen är slutförd!" -ForegroundColor Yellow
