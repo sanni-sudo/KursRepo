@@ -426,7 +426,7 @@ Disable-InsecureProtocols
 # Inaktiverar onödiga tjänster, Telnet och FTP
 Disable-UnnecessaryServices
 # Kontrollerar om det lediga utrymmet på volymen där C:\Windows\Temp finns är under 15 %. 
-# Om så är fallet, flyttas alla filer från den mappen till D:\TempBackup.
-Move-TempFilesIfLowSpace #-TempFolder "C:\Windows\Temp" -ArchiveFolder "C:\TempBackup" -Threshold 70
+# Om så är fallet, flyttas alla filer från den mappen till C:\TempBackup.
+Move-TempFilesIfLowSpace 
 # Aktiverar och konfigurerar BitLocker på systemdisken (C:) om den inte redan är aktiverat. 
 Enable-SystemDriveBitLocker 
