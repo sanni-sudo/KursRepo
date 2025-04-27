@@ -401,7 +401,21 @@ General notes
             
         }
     }
+# Sammanfattning till administratören i konsolen
+Write-Host "`n---------- Sammanfattning av säkerhetskontroll ----------" -ForegroundColor Cyan
 
+Write-Host "- Brandväggsprofiler kontrollerade och aktiverade" -ForegroundColor Green
+Write-Host "- All annan inkommande trafik blockerad" -ForegroundColor Green
+Write-Host "- Tillåtna portar öppnade: $($AllowedTCPPorts -join ', ')" -ForegroundColor Green
+Write-Host "- Windows Defender kontrollerad och härdad" -ForegroundColor Green
+Write-Host "- Administratörsanvändare i AD kontrollerade" -ForegroundColor Green
+Write-Host "- Icke-godkända användare borttagna" -ForegroundColor Green
+Write-Host "- Inaktiva användare inaktiverade" -ForegroundColor Green
+Write-Host "- Osäkra protokoll och onödiga tjänster inaktiverade" -ForegroundColor Green
+Write-Host "- Temporära filer flyttade vid låg diskutrymme om nödvändigt" -ForegroundColor Green
+Write-Host "- BitLocker kontrollerad och aktiverad om det behövdes" -ForegroundColor Green
+
+Write-Host "`nSäkerhetskontrollen och härdningen är slutförd!" -ForegroundColor Yellow
 
 # -------------------- Huvudlogiken--------------------------
 
