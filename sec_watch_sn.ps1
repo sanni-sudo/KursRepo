@@ -71,7 +71,7 @@ function Block-AllOtherInbound {
     New-NetFirewallRule -DisplayName "Block All Other Inbound" -Direction Inbound -Action Block -Profile Any
     
     # Loggar åtgärden
-    log_message "INFO" "Brandväggsregel 'Block All Other Inbound' skapad - all inkommande trafik blockeras."
+    log_message "WARNING" "Brandväggsregel 'Block All Other Inbound' skapad - all inkommande trafik blockeras."
 }
 
 # Funktionen att tillåta specifika portar för angivet protokoll, t.ex. RDP och HTTPS (TCP)
@@ -129,7 +129,7 @@ function Get-WindowsDefenderStatus {
 
     # Om Windows Defender är inte uppdaterat startar en fullständig skanning
         Start-MpScan -ScanType FullScan
-        log_message "INFO" "Fullständig skanning startad."
+        log_message "WARNING" "Fullständig skanning startad."
 
     # Väntar och kontrollerar om skanningen körs
         Start-Sleep -Seconds 5           # Ger lite tid för skanning att starta
@@ -156,7 +156,7 @@ function Get-ApprovedUsers {
     try {
     $ApprovedUsers = Get-Content -Path $ApprovedUsersPath -ErrorAction Stop
     } catch [System.IO.FileNotFoundException] {
-    log_message "ERROR" "Filen med godkända användare hittades inte: $ApprovedUsersPath" -ForegroundColor Red
+    log_message "WARNING" "Filen med godkända användare hittades inte: $ApprovedUsersPath" -ForegroundColor Red
     return
     } catch {
     log_message "ERROR" "Ett fel uppstod vid läsning av filen: $($_.Exception.Message)" -ForegroundColor Red
@@ -197,7 +197,7 @@ function Remove-UnapprovedUsers {
     try {
         $ApprovedUsers = Get-Content -Path $ApprovedUsersPath -ErrorAction Stop
     } catch {
-        log_message "ERROR" "Kunde inte läsa filen med godkända användare: $($_.Exception.Message)" -ForegroundColor Red
+        log_message "WARNING" "Kunde inte läsa filen med godkända användare: $($_.Exception.Message)" -ForegroundColor Red
         return
     }
     try {
@@ -222,7 +222,7 @@ foreach ($member in $AdminGroupMembers) {
 }
 }
 
-# Funktionen att avaktivera konton som inte använts på 90 dagar
+# Funktionen att inaktivera konton som inte använts på 90 dagar
 function Disable-InactiveUsers {
     param (
         [int]$InactiveDays = 90,
@@ -247,21 +247,21 @@ function Disable-InactiveUsers {
     }
     foreach ($user in $inactiveUsers) {
         try {
-            # Avaktiverar användarkonton
+            # Inaktiverar användarkonton
             Disable-ADAccount -Identity $user.SamAccountName -Confirm:$false
 
             # Loggar åtgärden med tidsstämpel 
-            $logEntry = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Avaktiverade användare: $($user.SamAccountName)"
+            $logEntry = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Inaktiverade användare: $($user.SamAccountName)"
             Add-Content -Path $LogPath -Value $logEntry
 
-            log_message "INFO" "Avaktiverade användare: $($user.SamAccountName)"
+            log_message "WARNING" "Inaktiverade användare: $($user.SamAccountName)"
         } catch {
-            log_message "ERROR" "Fel vid avaktivering av användare $($user.SamAccountName): $_"
+            log_message "ERROR" "Fel vid inaktivering av användare $($user.SamAccountName): $_"
         }
     }
 }
-# Avaktiverar osäkra protokoll som SMBv1 via registerändringar.
-# Kontrollerar och avaktiverar SMBv1-protokollet genom att ändra relevanta registerinställningar.
+# Inaktiverar osäkra protokoll som SMBv1 via registerändringar.
+# Kontrollerar och inaktiverar SMBv1-protokollet genom att ändra relevanta registerinställningar.
 # Dessa konfigurationer kräver administratörsbehörighet.
 function Disable-InsecureProtocols {
     # Kontrollerar om SMBv1 är aktiverat
@@ -269,29 +269,29 @@ function Disable-InsecureProtocols {
         $smb1Status = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name SMB1 -ErrorAction Stop
         if ($smb1Status.SMB1 -eq 1) {
             log_message "WARNING" "SMBv1 är aktiverat. Försöker avaktivera..." -ForegroundColor Yellow
-            # Avaktiverar SMBv1
+            # Inaktiverar SMBv1
             Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name SMB1 -Type DWORD -Value 0 -Force
-            log_message "INFO" "SMBv1 har avaktiverats. En omstart krävs för att ändringen ska träda i kraft." -ForegroundColor Green
+            log_message "INFO" "SMBv1 har inaktiverats. En omstart krävs för att ändringen ska träda i kraft." -ForegroundColor Green
         } else {
             log_message "INFO" "SMBv1 är redan inaktiverat." -ForegroundColor Green
         }
     } catch {
         log_message "WARNING" "SMBv1-registernyckeln hittades inte. SMBv1 kan vara aktiverat som standard." -ForegroundColor Red
-        # Skapar och avaktiverar SMBv1
+        # Skapar och inaktiverar SMBv1
         try {
             New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name SMB1 -PropertyType DWORD -Value 0 -Force
-            log_message "INFO" "SMBv1 har avaktiverats genom att skapa registernyckeln. En omstart krävs för att ändringen ska träda i kraft." -ForegroundColor Green
+            log_message "INFO" "SMBv1 har inaktiverats genom att skapa registernyckeln. En omstart krävs för att ändringen ska träda i kraft." -ForegroundColor Green
         } catch {
-            log_message "ERROR" "Misslyckades med att skapa och avaktivera SMBv1-registernyckeln: $_" -ForegroundColor Red
+            log_message "ERROR" "Misslyckades med att skapa och inaktivera SMBv1-registernyckeln: $_" -ForegroundColor Red
         }
     }
 }
 
-# Funktionen att stoppa och avaktivera onödiga tjänster som Telnet och FTP.
+# Funktionen att stoppa och inaktivera onödiga tjänster som Telnet och FTP.
 # kontrollerar om specifika tjänster är installerade, stoppar dem om de körs 
-# och avaktiverar dem för att förbättra systemets säkerhet.
+# och inaktiverar dem för att förbättra systemets säkerhet.
 function Disable-UnnecessaryServices {
-      # Lista över tjänster att avaktivera
+      # Lista över tjänster att inaktivera
     $servicesToDisable = @("TlntSvr", "FTPSVC")         # TlntSvr = Telnet, FTPSVC = FTP
 
     foreach ($serviceName in $servicesToDisable) {
@@ -301,7 +301,7 @@ function Disable-UnnecessaryServices {
                 log_message "INFO" "Stoppar tjänsten $($service.DisplayName)..."
                 Stop-Service -Name $serviceName -Force
             }
-            log_message "INFO" "Avaktiverar tjänsten $($service.DisplayName)..."
+            log_message "INFO" "Inaktiverar tjänsten $($service.DisplayName)..."
             Set-Service -Name $serviceName -StartupType Disabled
         } catch {
             log_message "WARNING" "Tjänsten '$serviceName' hittades inte eller kunde inte hanteras: $_"
@@ -351,28 +351,82 @@ function Move-TempFilesIfLowSpace {
     }
 }
 
+# Funktionen att aktivera och konfigurera BitLocker på systemdisken (c:)
+function Enable-SystemDriveBitLocker {
+#    param (
+#        [string]$RecoveryKeyPath = "C:\BitLockerRecovery"
+#        )
+        # Kontrollerar om TPM är tillgänglig och aktiverad
+ #       $tpm = Get-Tpm
+ #       if (-not $tpm.TpmPresent -or -not $tpm.TpmReady) {
+ #           log_message "ERROR" "TPM är inte tillgänglig eller inte redo. BitLocker kan inte aktiveras." -ForegroundColor Red
+ #       return
+ #       }
+        # Kontrollerar om återställningsnyckelns sökväg finns, annars skapar den
+ #       if (-not (Test-Path -Path $RecoveryKeyPath)) {
+ #           try {
+ #               New-Item -Path $RecoveryKeyPath -ItemType Directory -Force | Out-Null
+ #               log_message "INFO" "Återställningsnyckelns mapp skapad på: $RecoveryKeyPath" -ForegroundColor Green 
+ #           } catch {
+ #               log_message "ERROR" "Fel vid skapande av återställningsnyckelns mapp: $_" -ForegroundColor Red
+ #               return       
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#> #          }
+ #           }
+        # Hämtar alla volumer och itererar över dem
+        $volumes = Get-BitLockerVolume
+        foreach ($volume in $volumes) {
+            # Kontrollerar om volumen är systemdisken (C:)
+            if ($volume.MountPoint -eq "C:" -and $volume.ProtectionStatus -ne "On") {
+#            if ($volume.MountPoint -eq "C:") {
+ #               if ($volume.ProtectionStatus -eq "On") {
+ #                   log_message "INFO" "BitLocker är redan aktiverat på $($volume.MountPoint)." -ForegroundColor Yellow
+ #           } else {
+ #               try {
+                    Enable-BitLocker -MountPoint $volume.MountPoint -TmpProtector -UsedSpaceOnly -SkipHardwareTest                                             
+                    log_message "INFO" "BitLocker har aktiverats på $($volume.MountPoint)." -ForegroundColor Green 
+                } elseif ($volume.MountPoint -eq "C:") { 
+                    log_message "INFO" "BitLocker är redan aktiverat på $($volume.MountPoint)." -ForegroundColor Yellow                }
+            
+        }
+    }
+
+
 # -------------------- Huvudlogiken--------------------------
 
 # Kontrollerar, tömmer eller skapar loggfilen
 create_logfile
-# Kontrollerar brandväggens status för varje profil (Domain, Private, Public) och slåt på brandväggen 
-#Enable-WindowsFirewall
-# Strikta brandväggsregeln som blockerar all inkommande trafik
-#Block-AllOtherInbound 
-# Specifika brandväggsregler som tillåter RDP (3389), HTTPS (443), DNS (53) och DHCP (67-68)  
-#Enable-AllowRequiredPorts
+# Kontrollerar brandväggens status för varje profil (Domain, Private, Public) och slår på brandväggen 
+Enable-WindowsFirewall
+# Implementerar strikta brandväggsregeln som blockerar all inkommande trafik
+Block-AllOtherInbound 
+# Implementerar specifika brandväggsregler som tillåter RDP (3389), HTTPS (443), DNS (53) och DHCP (67-68)  
+Enable-AllowRequiredPorts
 # Kontrollerar och härdar Windows Defender
-#Get-WindowsDefenderStatus
+Get-WindowsDefenderStatus
 # Listar användare i AD Administrators-gruppen
-#Get-ApprovedUsers
+Get-ApprovedUsers
 # Tar bort icke-godkända användare från Active Directory-grupp
-#Remove-UnapprovedUsers
-# Avaktiverar konton som inte använts på 90 dagar
-#Disable-InactiveUsers
-# Avaktiverar osäkra protokoll, SMBv1
-#Disable-InsecureProtocols
-# Avaktiverar onödiga tjänster, Telnet och FTP
-#Disable-UnnecessaryServices
+Remove-UnapprovedUsers
+# Inaktiverar konton som inte använts på 90 dagar
+Disable-InactiveUsers
+# Inaktiverar osäkra protokoll, SMBv1
+Disable-InsecureProtocols
+# Inaktiverar onödiga tjänster, Telnet och FTP
+Disable-UnnecessaryServices
 # Kontrollerar om det lediga utrymmet på volymen där C:\Windows\Temp finns är under 15 %. 
 # Om så är fallet, flyttas alla filer från den mappen till D:\TempBackup.
 Move-TempFilesIfLowSpace #-TempFolder "C:\Windows\Temp" -ArchiveFolder "C:\TempBackup" -Threshold 70
+# Aktiverar och konfigurerar BitLocker på systemdisken (C:) om den inte redan är aktiverat. 
+Enable-SystemDriveBitLocker 
