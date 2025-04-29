@@ -1,6 +1,6 @@
 # log_monitor.py - Övervakar loggfiler för misstänkta nyckelord
 # Skapat av: Sanna Nilsson, 28 April 2025
-# Syfte: Skanna loggfiler i C:\KursRepo för nyckelord som "error" och "failed",
+# Syfte: Skanna loggfiler i C:\KursRepo\test_monitor_dir för nyckelord som "error" och "failed",
 # logga resultat till monitor.log och visa varningar i konsolen
 # Krav:
 # -Kontrollera att loggkatalogen finns
@@ -15,7 +15,7 @@ import time                 # Importerar standardmodulen time, som innehåller f
 import re                   # Reguljära uttryck som används för att söka efter nyckelord i loggrader
 
 # Konfiguration
-LOG_DIR = "C://KursRepo"
+LOG_DIR = "C://KursRepo//test_monitor_dir"
 LOG_FILE = os.path.join(LOG_DIR, "monitor.log")
 KEYWORDS = ["error", "failed"]
 
@@ -51,6 +51,8 @@ if not os.path.exists(LOG_DIR):
 
 try:
     for filename in os.listdir(LOG_DIR):
+        if filename == "monitor.log":
+            continue                    # Hoppa över loggfilen för att undvika självläsning
         filepath = os.path.join(LOG_DIR, filename)
         if os.path.isfile(filepath):
             with open(filepath, "r") as file:
@@ -60,7 +62,7 @@ try:
                             message = f"Hittade {keyword} i {filename}: {line.strip()}"
                             log_message("WARNING", message)
                             print(f"WARNING: {message}")
-                            log_message("INFO", "Skanning klar.")
+    log_message("INFO", "Skanning klar.")
 except FileNotFoundError:
     log_message("ERROR", f"Kunde inte hitta en fil i {LOG_DIR}.")
     print(f"ERROR: Kunde inte hitta en fil!")
