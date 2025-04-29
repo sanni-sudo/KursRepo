@@ -11,9 +11,6 @@ import re                   # Reguljära uttryck som används för att söka eft
 # Konfiguration
 LOG_DIR = "C:\\KursRepo\\test_monitor_dir"
 LOG_FILE = os.path.join(LOG_DIR, "monitor.log")
-# Testar funktionen
-
-#LOG_FILE = "C:\\Fake\\test.log"
 KEYWORDS = ["error", "failed"]
 
 # Testar variablerna för att verifiera 
@@ -59,14 +56,23 @@ try:
             continue                    # Hoppa över loggfilen för att undvika självläsning
         filepath = os.path.join(LOG_DIR, filename)
         if os.path.isfile(filepath):
-            with open(filepath, "r") as file:
-                for line in file:
+            with open(filepath, "r", encoding="utf-8", errors="ignore") as file:
+                
+                for line in file:               
+                    
                     for keyword in KEYWORDS:
-                        if re.search(keyword, line,re.IGNORECASE):
+                        if re.search(keyword, line.strip(), re.IGNORECASE):
                             message = f"Hittade {keyword} i {filename}: {line.strip()}"
                             log_message("WARNING", message)
                             print(f"WARNING: {message}")
-    log_message("INFO", "Skanning klar.")
+                          
+    log_message("INFO", f"Skanning klar.") 
+
+# Konsolsammanfattning
+
+    print(f"Säkerhetsskanning avslutad: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Loggfil: {LOG_FILE}")   
+     
 except FileNotFoundError:
     log_message("ERROR", f"Kunde inte hitta en fil i {LOG_DIR}.")
     print(f"ERROR: Kunde inte hitta en fil!")
@@ -81,10 +87,5 @@ except Exception as e:
     log_message("ERROR", f"Oväntat fel: {str(e)}")
     print(f"ERROR: Oväntat fel: {str(e)}")
     exit(1)
-    
-import sys
 
-shoud_exit = True
-if shoud_exit:
-    print("Skanning klar. Avslutar skriptet.")
-    sys.exit()
+

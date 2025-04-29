@@ -58,7 +58,7 @@ try:
             with open(filepath, "r") as file:
                 for line in file:
                     for keyword in KEYWORDS:
-                        if re.search(keyword, line,re.IGNORECASE):
+                        if re.search(keyword, line, re.IGNORECASE):
                             message = f"Hittade {keyword} i {filename}: {line.strip()}"
                             log_message("WARNING", message)
                             print(f"WARNING: {message}")
@@ -77,6 +77,13 @@ except Exception as e:
     log_message("ERROR", f"Oväntat fel: {str(e)}")
     print(f"ERROR: Oväntat fel: {str(e)}")
     exit(1)
+
+# Konsolsammanfattning
+
+print(f"Säkerhetsskanning klar: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"Loggfil: {LOG_FILE}")
+
+
 
 
 
