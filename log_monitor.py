@@ -55,7 +55,7 @@ try:
             continue                    # Hoppa över loggfilen för att undvika självläsning
         filepath = os.path.join(LOG_DIR, filename)
         if os.path.isfile(filepath):
-            with open(filepath, "r") as file:
+            with open(filepath, "r", encoding="utf-16") as file:
                 for line in file:
                     for keyword in KEYWORDS:
                         if re.search(keyword, line, re.IGNORECASE):
