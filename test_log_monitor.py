@@ -9,9 +9,9 @@ import time                 # Importerar standardmodulen time, som innehåller f
 import re                   # Reguljära uttryck som används för att söka efter nyckelord i loggrader
 
 # Konfiguration
-LOG_DIR = "C:\\KursRepo\\test_monitor_dir"
+LOG_DIR = "C:\\KursRepo\\Test_Monitor_DIR"
 LOG_FILE = os.path.join(LOG_DIR, "monitor.log")
-KEYWORDS = ["error", "failed"]
+KEYWORDS = ["error", "failed", "warning"]
 
 # Testar variablerna för att verifiera 
 #import os
@@ -67,11 +67,6 @@ try:
                             print(f"WARNING: {message}")
                           
     log_message("INFO", f"Skanning klar.") 
-
-# Konsolsammanfattning
-
-    print(f"Säkerhetsskanning avslutad: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Loggfil: {LOG_FILE}")   
      
 except FileNotFoundError:
     log_message("ERROR", f"Kunde inte hitta en fil i {LOG_DIR}.")
@@ -88,4 +83,7 @@ except Exception as e:
     print(f"ERROR: Oväntat fel: {str(e)}")
     exit(1)
 
+# Konsolsammanfattning
 
+print(f"Säkerhetsskanning avslutad: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"Loggfil: {LOG_FILE}")   
