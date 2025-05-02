@@ -5,7 +5,9 @@ $SEC_LOG = "$PSScriptRoot\security_hardening_$(Get-Date -Format 'yyyyMMdd').log"
 function check_defender{
     $profiles = Get-NetFirewallProfile
 
-    Write-Host "=== Windows Defender Firewall Status per profil ==="
+    Write-Host "=== Windows Defender brandväggsstatus per profil ==="
+    log_message "INFO" "=== Windows Defender brandväggsstatus per profil ==="
+    
 
     foreach ($profile in $profiles) {
         $name = $profile.Name
@@ -13,10 +15,12 @@ function check_defender{
 
         if ($enabled) {
             Write-Host "${name}: AKTIV" -ForegroundColor Green
-            log_message -log_level "INFO" -message "Defenderprofilen ${name}: AKTIV"
+            log_message "INFO" "Defenderprofilen ${name}: AKTIV"
         } else {
             Write-Host "${name}: INAKTIV" -ForegroundColor Red
-            log_message -log_level "ERROR" -message "Defenderprofilen ${name}: INAKTIV"
+            log_message "ERROR" "Defenderprofilen ${name}: INAKTIV"
+            Set-NetFirewallProfile -Profile ${name} -Enabled True
+            log_message "INFO" "Defenderprofilen ${name}: AKTIVERAD av script"
         }
     }
 }
@@ -45,56 +49,65 @@ function clear-fileContent {
     if (Test-Path $filePath) {
         Clear-Content -Path $filePath
         Write-Host "Innehållet i filen '$filePath' har rensats." -ForegroundColor Green
+        log_message "INFO" "Innehållet i filen '$filePath' rensades. Då loggfil redan fanns"
     } else {
-        Write-Host "Filen '$filePath' finns inte." -ForegroundColor Red
+        New-Item -Path $filePath -ItemType File -Force | Out-Null
+        Write-Host "Filen '$filePath' skapades eftersom den inte fanns." -ForegroundColor Yellow
+        log_message "INFO" "Filen '$filePath' skapades eftersom den inte fanns."
     }
 }
+
 #Blockerar allt inbound förutom HTTPS, RDP, SSH och DHCP
 function block_traffic {
-    # Första steg: Blockera all trafik
-    Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled False
+    
+    log_message "INFO" "=== Sätter brandväggsregeler för inbound trafik ==="
+    Set-NetFirewallProfile -Profile Domain,Private,Public -DefaultInboundAction Block
+    log_message "INFO" "Blockerar allt inkommande med brandväggen"
+    # Tillåt specifika portar utan ddebugutskrift till terminalen ($nulll)
+    $null = New-NetFirewallRule -DisplayName "Tillåt HTTPS (Port 443)" -Direction Inbound -Protocol TCP -LocalPort 443 -Action Allow -Profile Any
+    log_message "INFO" "Tillåt HTTPS port 443"
+    $null = New-NetFirewallRule -DisplayName "Tillåt RDP (Port 3389)" -Direction Inbound -Protocol TCP -LocalPort 3389 -Action Allow -Profile Any
+    log_message "INFO" "Tillåt RDP port 3389"
+    $null = New-NetFirewallRule -DisplayName "Tillåt SSH (Port 22)" -Direction Inbound -Protocol TCP -LocalPort 22 -Action Allow -Profile Any
+    log_message "INFO" "Tillåt SSH port 22"
+    $null = New-NetFirewallRule -DisplayName "Tillåt DHCP (Port 67)" -Direction Inbound -Protocol UDP -LocalPort 67 -Action Allow -Profile Any
+    log_message "INFO" "Tillåt DHCP port 67"
 
-    # Tillåt specifika portar utan ddebugutskrift till terminalen
-    $null = New-NetFirewallRule -DisplayName "Allow HTTPS (Port 443)" -Direction Inbound -Protocol TCP -LocalPort 443 -Action Allow -Profile Any
-    $null = New-NetFirewallRule -DisplayName "Allow RDP (Port 3389)" -Direction Inbound -Protocol TCP -LocalPort 3389 -Action Allow -Profile Any
-    $null = New-NetFirewallRule -DisplayName "Allow SSH (Port 22)" -Direction Inbound -Protocol TCP -LocalPort 22 -Action Allow -Profile Any
-    $null = New-NetFirewallRule -DisplayName "Allow DHCP (Port 67)" -Direction Inbound -Protocol UDP -LocalPort 67 -Action Allow -Profile Any
-
-    # Aktivera brandväggsregler igen
-    Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled True
-    log_message -log_level "INFO" -message "Blockerar all trafik inbound förutom HTTPS,RDP,SSH och DHCP"
     Write-Host "Endast HTTPS (443), RDP (3389), SSH (22), och DHCP (67) är tillåtna. All annan trafik har blockerats." -ForegroundColor Green
+    log_message "INFO" "Endast HTTPS (443), RDP (3389), SSH (22), och DHCP (67) är tillåtna. All annan trafik har blockerats."
 }
 #Kontrollerar om microsoft defender är uppdaterat
 function check_defenderUpdateStatus {
     $defenderInfo = Get-MpComputerStatus
-
+    
     if ($null -eq $defenderInfo) {
         Write-Host "Kunde inte hämta status från Windows Defender." -ForegroundColor Red
+        log_message "ERROR" "Kunde inte hämta status från Windows Defender."
         return
     }
 
     $lastUpdate = $defenderInfo.AntispywareSignatureLastUpdated
     $definitionsVersion = $defenderInfo.AntispywareSignatureVersion
 
-    Write-Host "===== Microsoft Defender Uppdateringsstatus =====" -ForegroundColor Cyan
+    Write-Host "=== Microsoft Defender Uppdateringsstatus ===" -ForegroundColor Cyan
     Write-Host "Senaste uppdatering: $lastUpdate"
     Write-Host "Signaturversion: $definitionsVersion"
     
 
-    log_message -log_level "INFO" -message "===== Microsoft Defender Uppdateringsstatus ====="
-    log_message -log_level "INFO" -message "Senaste uppdatering: $lastUpdate"
-    log_message -log_level "INFO" -message "Signaturversion: $definitionsVersion"
+    log_message "INFO" "=== Microsoft Defender Uppdateringsstatus ==="
+    log_message "INFO" "Senaste uppdatering: $lastUpdate"
+    log_message "INFO" "Signaturversion: $definitionsVersion"
     
 
     # Kolla om signaturerna är äldre än 3 dagar
     if (((Get-Date) - $lastUpdate).Days -gt 3) {
         Write-Host "Defender-signaturerna är äldre än 3 dagar!" -ForegroundColor Red
-        log_message -log_level "ERROR" -message "För gamla signaturer för defender"
+        log_message "ERROR" "För gamla signaturer för defender"
+        log_message "INFO" "=== Startar uppdatering och full scanning ==="
         start_fullDefenderScan
     } else {
         Write-Host "Defender är uppdaterad." -ForegroundColor Green
-        log_message -log_level "INFO" -message "Aktuella signaturer för defender"
+        log_message "INFO" "Aktuella signaturer för defender"
     }
 }
 
@@ -137,7 +150,7 @@ function lock_inactiveUsers {
 
     # Hämta dagens datum minus $DaysInactive dagar
     $DateThreshold = (Get-Date).AddDays(-$DaysInactive)
-
+    log_message "INFO" "=== Kontrollerar konton som inte använts de senaste ${DaysInactive} ==="
     # Hämta alla aktiva användare och deras senaste inloggningsdatum
     $InactiveUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate |
         Where-Object { $_.LastLogonDate -lt $DateThreshold }
@@ -169,6 +182,7 @@ function disable_SMBv1IfActive {
     $regKeyPath = "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters"
     $regValueName = "SMB1"
 
+    log_message "INFO" "=== Kontrollerar osäkert protokoll SMBv1 ==="
     if (Test-Path $regKeyPath) {
         $regValue = Get-ItemProperty -Path $regKeyPath -Name $regValueName -ErrorAction SilentlyContinue
         if ($null -ne $regValue) {
@@ -201,6 +215,7 @@ function disable_insecureProtocols {
         @{ Name = "Telnet"; ServiceName = "TlntSvr" }
     )
 
+    log_message "INFO" "=== Inaktiverar FTP och Telnet då de är osäkra protokoll ==="
     foreach ($svc in $services) {
         $service = Get-Service -Name $svc.ServiceName -ErrorAction SilentlyContinue
         if ($null -ne $service) {
@@ -233,6 +248,7 @@ function check_diskSpace {
         [string]$TempPath = "C:\Temp"
     )
 
+    log_message "INFO" "=== Kontrollerar tillgängligt diskutrymme ==="
     # Hämta information om disken
     $disk = Get-CimInstance -ClassName Win32_LogicalDisk -Filter "DeviceID='${DriveLetter}:'"
     if ($null -eq $disk) {
@@ -243,19 +259,22 @@ function check_diskSpace {
     }
 
     # Beräkna procentandel ledigt utrymme
-    $freePercent = [math]::Round(($disk.FreeSpace / $disk.Size) * 100, 2)
+    $freePercent = [math]::Round(($disk.FreeSpace / $disk.Size) * 100, 0)
     $message = "Enhet $DriveLetter har $freePercent% ledigt utrymme."
     Write-Host $message
     log_message "INFO" $message
 
     # Om ledigt utrymme är mindre än 15 %, komprimera temporära filer
     if ($freePercent -lt 15) {
-        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+        $timestamp = Get-Date -Format "yyyyMMdd"
         $zipPath = Join-Path -Path $TempPath -ChildPath "TempArchive_$timestamp.zip"
 
         try {
             Compress-Archive -Path "$TempPath\*" -DestinationPath $zipPath -Force
-            $message = "Temporära filer har komprimerats till $zipPath på grund av lågt diskutrymme."
+            # Ta bort alla filer i C:\Temp utom den nyligen skapade zipfilen
+            Get-ChildItem -Path $TempPath -File | Where-Object { $_.FullName -ne $zipPath } | Remove-Item -Force
+
+            $message = "Temporära filer har komprimerats till $zipPath på grund av lågt diskutrymme. Övriga filer har raderats."
             Write-Host $message
             log_message "INFO" $message
         } catch {
@@ -272,16 +291,7 @@ function enable_bitLocker {
         [string]$MountPoint = "C:"
     )
 
-    $manageBdePath = "${env:windir}\System32\manage-bde.exe"
-
-    # Kontrollera om en CD/DVD är monterad (kan stoppa BitLocker)
-    $cdDrives = Get-Volume | Where-Object { $_.DriveType -eq 'CD-ROM' }
-    if ($cdDrives) {
-        $message = "Ett startbart media (CD/DVD) är monterat. Mata ut och starta om datorn innan du fortsätter."
-        Write-Host $message
-        log_message "ERROR" $message
-        return
-    }
+    log_message "INFO" "=== Kontrollerar och aktiverar BitLocker ==="
 
     # Kontrollera BitLocker-status
     $bitLockerStatus = Get-BitLockerVolume -MountPoint $MountPoint
@@ -308,7 +318,7 @@ function enable_bitLocker {
         return
     }
 
-    # Aktivera BitLocker med TPM-skyddare
+    # Aktivera BitLocker 
     try {
         Enable-BitLocker -MountPoint $MountPoint -EncryptionMethod XtsAes256 -UsedSpaceOnly -TpmProtector
         $message = "BitLocker har aktiverats på $MountPoint med TPM."
@@ -320,20 +330,6 @@ function enable_bitLocker {
         $existingProtectors = (Get-BitLockerVolume -MountPoint $MountPoint).KeyProtector
         if (-not $existingProtectors.KeyProtectorType.Contains("RecoveryPassword")) {
             Add-BitLockerKeyProtector -MountPoint $MountPoint -RecoveryPasswordProtector
-        }
-
-        # Hämta återställningsnyckeln med manage-bde
-        $protectorOutput = & $manageBdePath -protectors -get $MountPoint 2>&1
-        $recoveryKeyLine = $protectorOutput | Where-Object { $_ -match "Password:\s+([0-9\-]+)" }
-        if ($recoveryKeyLine) {
-            $recoveryKey = ($recoveryKeyLine -split ":\s+")[1].Trim()
-            $message = "Återställningsnyckel för ${MountPoint}: $recoveryKey"
-            Write-Host $message
-            log_message "INFO" $message
-        } else {
-            $message = "Kunde inte hämta återställningsnyckeln för $MountPoint."
-            Write-Host $message
-            log_message "ERROR" $message
         }
     } catch {
         $message = "Ett fel uppstod vid aktivering av BitLocker på ${MountPoint}: $_"
@@ -347,7 +343,7 @@ function enable_bitLocker {
 # Huvudlogik
 
 #Rensar loggfilen från föregående körning
-clear-fileContent -filePath $SEC_LOG
+clear-fileContent $SEC_LOG
 #Kontrollerar defender status för alla profiler
 check_defender
 #Blockera alla portar som inte skall vara tillåtna

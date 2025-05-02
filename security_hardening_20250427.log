@@ -1,0 +1,37 @@
+2025-04-27 15:40:16 [INFO] Loggfilen tömd
+2025-04-27 15:40:16 [INFO] Domain-branväggen har aktiverats
+2025-04-27 15:40:17 [INFO] Private-branväggen har aktiverats
+2025-04-27 15:40:17 [INFO] Public-branväggen har aktiverats
+2025-04-27 15:40:17 [WARNING] Brandväggsregel 'Block All Other Inbound' skapad - all inkommande trafik blockeras.
+2025-04-27 15:40:18 [INFO] Tillåter port 3389 för TCP
+2025-04-27 15:40:19 [INFO] Tillåter port 443 för TCP
+2025-04-27 15:40:20 [INFO] DNS TCP-regel skapades
+2025-04-27 15:40:21 [INFO] DNS UDP-regel skapades
+2025-04-27 15:40:22 [INFO] DHCP-regel skapades
+2025-04-27 15:40:22 [INFO] Windows Defender är redan aktiverat.
+2025-04-27 15:40:22 [INFO] Definitionsfilerna är aktuella. Ingen skanning utförd.
+2025-04-27 15:40:23 [INFO] Analyserar medlemmar i AD Administrators-gruppen...
+2025-04-27 15:40:23 [INFO] HelpdeskAdmins är godkänd
+2025-04-27 15:40:23 [INFO] ServerAdmin01 är godkänd
+2025-04-27 15:40:23 [INFO] SecAdmin-Server01 är godkänd
+2025-04-27 15:40:24 [INFO] HelpdeskAdmins är godkänd och behålls i gruppen
+2025-04-27 15:40:24 [INFO] ServerAdmin01 är godkänd och behålls i gruppen
+2025-04-27 15:40:24 [INFO] SecAdmin-Server01 är godkänd och behålls i gruppen
+2025-04-27 15:40:24 [WARNING] Inaktiverade användare: Guest
+2025-04-27 15:40:24 [WARNING] Inaktiverade användare: krbtgt
+2025-04-27 15:40:24 [WARNING] Inaktiverade användare: student1
+2025-04-27 15:40:24 [WARNING] Inaktiverade användare: TestUser1
+2025-04-27 15:40:24 [WARNING] Inaktiverade användare: TestUser2
+2025-04-27 15:40:24 [WARNING] Inaktiverade användare: TestUser3
+2025-04-27 15:40:24 [WARNING] Inaktiverade användare: TestUser4
+2025-04-27 15:40:24 [INFO] SMBv1 är redan inaktiverat.
+2025-04-27 15:40:24 [WARNING] Tjänsten 'TlntSvr' hittades inte eller kunde inte hanteras: Cannot find any service with service name 'TlntSvr'.
+2025-04-27 15:40:24 [INFO] Inaktiverar tjänsten Microsoft FTP Service...
+2025-04-27 15:40:25 [WARNING] Ledigt utrymme är under 90%. Flyttar temporära filer...
+2025-04-27 15:40:25 [INFO] Flyttade: C:\Windows\Temp\MpSigStub.log till C:\TempBackup\MpSigStub.log
+2025-04-27 15:40:25 [INFO] Flyttade: C:\Windows\Temp\silconfig.log till C:\TempBackup\silconfig.log
+2025-04-27 15:40:25 [INFO] Flyttade: C:\Windows\Temp\testdok1.txt till C:\TempBackup\testdok1.txt
+2025-04-27 15:40:25 [INFO] Flyttade: C:\Windows\Temp\testdok2.txt till C:\TempBackup\testdok2.txt
+2025-04-27 15:40:25 [INFO] Flyttade: C:\Windows\Temp\TestFil1.txt till C:\TempBackup\TestFil1.txt
+2025-04-27 15:40:25 [INFO] Flytt av temporära filer slutförd.
+2025-04-27 15:40:25 [INFO] BitLocker är redan aktiverat på C:.
