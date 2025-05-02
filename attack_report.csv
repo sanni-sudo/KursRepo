@@ -1,0 +1,42 @@
+2025-05-01 12:42:18,239 - INFO - Analyserar trafik från 2025-05-01 11:30:42 till 2025-05-01 11:35:42 (340 rader) 
+2025-05-01 12:42:18,240 - WARNING - Hög trafik från 10.0.0.10: 151 anslutningar
+2025-05-01 12:42:18,240 - WARNING - 10.0.0.10 skickade 52 anslutningar till 192.168.1.12
+2025-05-01 12:42:18,240 - WARNING - 10.0.0.10 skickade 54 anslutningar till 192.168.1.10
+2025-05-01 12:42:18,241 - WARNING - 10.0.0.146 använde ovanlig port 25 till 192.168.1.11
+2025-05-01 12:42:18,241 - WARNING - 10.0.0.146 använde ovanlig port 21 till 192.168.1.11
+2025-05-01 12:42:18,241 - WARNING - 10.0.0.146 använde ovanlig port 25 till 192.168.1.12
+2025-05-01 12:42:18,241 - WARNING - 10.0.0.146 använde ovanlig port 23 till 192.168.1.10
+2025-05-01 12:42:18,241 - WARNING - 10.0.0.146 använde ovanlig port 512 till 192.168.1.11
+2025-05-01 12:42:18,241 - WARNING - 10.0.0.146 använde ovanlig port 139 till 192.168.1.11
+2025-05-01 12:42:18,242 - WARNING - 10.0.0.146 använde ovanlig port 135 till 192.168.1.10
+2025-05-01 12:42:18,242 - WARNING - 10.0.0.146 använde ovanlig port 110 till 192.168.1.12
+2025-05-01 12:42:18,242 - WARNING - 10.0.0.146 använde ovanlig port 139 till 192.168.1.12
+2025-05-01 12:42:18,242 - WARNING - 10.0.0.146 använde ovanlig port 512 till 192.168.1.12
+2025-05-01 12:42:18,242 - WARNING - 10.0.0.146 använde ovanlig port 23 till 192.168.1.12
+2025-05-01 12:42:18,597 - INFO - Blockerat IP med UFW: 10.0.0.146
+2025-05-01 12:42:18,925 - INFO - Blockerat IP med UFW: 10.0.0.10
+2025-05-01 12:42:18,926 - INFO - Analyserar trafik från 2025-05-01 11:35:42 till 2025-05-01 11:40:42 (340 rader) 
+2025-05-01 12:42:18,927 - WARNING - Hög trafik från 10.0.0.10: 151 anslutningar
+2025-05-01 12:42:18,927 - WARNING - 10.0.0.10 skickade 64 anslutningar till 192.168.1.12
+2025-05-01 12:42:18,927 - WARNING - 10.0.0.146 använde ovanlig port 21 till 192.168.1.10
+2025-05-01 12:42:18,927 - WARNING - 10.0.0.146 använde ovanlig port 135 till 192.168.1.12
+2025-05-01 12:42:18,928 - WARNING - 10.0.0.146 använde ovanlig port 21 till 192.168.1.11
+2025-05-01 12:42:18,928 - WARNING - 10.0.0.146 använde ovanlig port 25 till 192.168.1.12
+2025-05-01 12:42:18,928 - WARNING - 10.0.0.146 använde ovanlig port 445 till 192.168.1.11
+2025-05-01 12:42:18,928 - WARNING - 10.0.0.146 använde ovanlig port 139 till 192.168.1.10
+2025-05-01 12:42:18,928 - WARNING - 10.0.0.146 använde ovanlig port 512 till 192.168.1.11
+2025-05-01 12:42:18,928 - WARNING - 10.0.0.146 använde ovanlig port 110 till 192.168.1.10
+2025-05-01 12:42:18,928 - WARNING - 10.0.0.146 använde ovanlig port 139 till 192.168.1.11
+2025-05-01 12:42:18,928 - WARNING - 10.0.0.146 använde ovanlig port 445 till 192.168.1.12
+2025-05-01 12:42:18,929 - WARNING - 10.0.0.146 använde ovanlig port 135 till 192.168.1.10
+2025-05-01 12:42:18,929 - WARNING - 10.0.0.146 använde ovanlig port 512 till 192.168.1.12
+2025-05-01 12:42:19,323 - INFO - Blockerat IP med UFW: 10.0.0.146
+2025-05-01 12:42:19,718 - INFO - Blockerat IP med UFW: 10.0.0.10
+2025-05-01 12:42:19,720 - INFO - Analyserar trafik från 2025-05-01 11:40:42 till 2025-05-01 11:45:42 (136 rader) 
+2025-05-01 12:42:19,720 - WARNING - 10.0.0.146 använde ovanlig port 25 till 192.168.1.11
+2025-05-01 12:42:19,721 - WARNING - 10.0.0.146 använde ovanlig port 135 till 192.168.1.12
+2025-05-01 12:42:19,721 - WARNING - 10.0.0.146 använde ovanlig port 445 till 192.168.1.10
+2025-05-01 12:42:19,721 - WARNING - 10.0.0.146 använde ovanlig port 23 till 192.168.1.10
+2025-05-01 12:42:19,721 - WARNING - 10.0.0.146 använde ovanlig port 135 till 192.168.1.10
+2025-05-01 12:42:19,722 - WARNING - 10.0.0.146 använde ovanlig port 23 till 192.168.1.12
+2025-05-01 12:42:20,077 - INFO - Blockerat IP med UFW: 10.0.0.146
