@@ -10,13 +10,16 @@
 
 readonly SYSLOG_FILE="/var/log/syslog"            # Sökväg till loggfilen som ska analyseras 
 readonly AUTHLOG_FILE="/var/log/auth.log"         # Sökväg till loggfilen som ska analyseras 
+# shellcheck disable=SC2155
 readonly REPORT_FILE="security_report_$(date +%Y%m%d).txt" # Fil där analysrapporten sparas med dagens datum på rapporten
 readonly TMP_FILE="/tmp/sec_watch_$$.tmp"         # $$ är process-ID för att undvika konflikter i temporära filer
 readonly ACTIONLOG_FILE="/var/log/security_actions.log"       # Loggar åtgärden om blockerade ip:n med ufw
-readonly ARCHIVEDIR_FILE="/backup/logs"           # Hit arkiveras och komprimeras loggar
+# shellcheck disable=SC2034
+readonly ARCHIVEDIR="/backup/logs"           # Hit arkiveras och komprimeras loggar
 readonly ADMINMAIL_FILE="testkali@testkalilinuxcl-2" # Hit mejlas rapporten till administratören
 readonly THRESHOLD=5                            # Anger tröskelvärde för försök innan ip:n räknas som "hög risk"
 readonly LOG="log.txt"                            #Arbetfil för kontroller av skriptet
+# shellcheck disable=SC2034
 readonly SUSSPECTLOG_FILE="susspect_log.txt"
 
 # readonly gör variablerna skrivskyddade för säkerhet, dvs värdet ska inte ändras senare i skriptet 
@@ -39,6 +42,7 @@ readonly SUSSPECTLOG_FILE="susspect_log.txt"
 log_message() {
 	local level="$1"          # INFO, WARNING, ERROR
 	local message="$2"
+  # shellcheck disable=SC2183
   printf "%s [%s] %s: %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$message" >> "$REPORT_FILE"
 }
 
@@ -141,6 +145,7 @@ check_file_writable "$ACTIONLOG_FILE"
 touch "$TMP_FILE"
 touch "$REPORT_FILE"
 #Tömmer rapportfilen om vi kört testet mer än en gång de senaste 24 timmarna.
+# shellcheck disable=SC2188
 > "$REPORT_FILE"
 
 # Skapar datumsträng för 24 timmar bakåt formaterat på samma format som i våra loggfiler(ISO-8601)

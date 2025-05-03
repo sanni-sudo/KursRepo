@@ -1,0 +1,44 @@
+2025-05-03 12:24:54,INFO,Rapportloggning initierad.
+2025-05-03 12:24:54,INFO,Startar nätverksövervakning...
+2025-05-03 12:24:54,INFO,-- Batchanalys: 2025-05-03 10:58:06 till 2025-05-03 11:10:04 ---
+2025-05-03 12:24:54,WARNING,[ALERT]  10.0.0.34 har 361 anslutningar som källa.
+2025-05-03 12:24:54,WARNING,[ALERT]  192.168.1.10 har 141 anslutningar som mål.
+2025-05-03 12:24:54,WARNING,[ALERT]  192.168.1.200 har 360 anslutningar som mål.
+2025-05-03 12:24:54,WARNING,[ALERT]  192.168.1.11 har 167 anslutningar som mål.
+2025-05-03 12:24:54,WARNING,[ALERT]  192.168.1.12 har 148 anslutningar som mål.
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 139 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 139 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 110 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 23 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 135 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 135 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 135 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.10 på port 23 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 110 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.10 på port 21 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.10 på port 23 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 445 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 23 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 25 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 25 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 23 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.10 på port 25 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 139 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.10 på port 23 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 512 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 110 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 21 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.10 på port 445 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 139 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 110 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 512 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 21 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 110 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.10 på port 21 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 139 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 135 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 512 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.11 på port 445 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.12 på port 512 ( TCP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.10 på port 110 ( UDP)
+2025-05-03 12:24:54,WARNING,[ALERT] Ovanlig port upptäckt:  10.0.0.68 →  192.168.1.10 på port 23 ( UDP)
