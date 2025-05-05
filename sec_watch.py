@@ -18,9 +18,9 @@ import logging      # Skapar loggar med tidstämplar och nivåer (INFO, WARNING,
 import time         # Arbetar med tidsfördröjning och tidsfunktioner
 import re           # Reguljära uttryck som används för att söka efter mönster i loggrader
 from collections import defaultdict     # En smidigare version av dict som automatiskt initierar värden 
-import smtplib
-from email.message import EmailMessage
-
+import smtplib      # Importerar SMTP-klienten för att skicka e-post
+from email.message import EmailMessage  # Skapar ett e-postmeddelande i rätt format
+import subprocess
 
 # Konfiguration
 LOG_DIR = "/home/testkali/KursRepo/Test_Monitor_Dir"
@@ -57,7 +57,7 @@ def setup_reporting():
 
 
 # Funktion för att generera rapport till CSV
-def log_message(level, message):
+def log_message(level, message, timestamp=None):
     # Kontrollera om rapportfilen existerar, om inte, skapa den med en header
     if not os.path.exists(REPORT_FILE):    
         with open(REPORT_FILE, mode="w", newline="") as file:            
@@ -65,8 +65,6 @@ def log_message(level, message):
 # Skriver header med tre kolumner: Timestamp: tidpunkt när rapporten skapades, 
 # Level: loggnivå och Message: loggmeddelandet
             writer.writerow(["Timestamp", "Level", "Message"]) 
-    # Hämtar nuvarande tid och formaterar den som en tydlig sträng (t.ex. "2025-05-03 13:45:22")
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # Skriv rapporten till CSV
     # Öppnar rapportfilen i append-läge ("a"), dvs vi lägger till längst ner i rapporten
     with open(REPORT_FILE, mode="a", newline="") as file:
@@ -75,7 +73,7 @@ def log_message(level, message):
 
 # Validera att loggkatalogen finns 
 def setup_path():
-# Loggar en informationsrad till CSV-rapporten med texten "Kontrollerar om katalogen finns" och
+# Loggar en informationsrad till CSV-rapporten med texten och
 # använder tidigare definierade funktionen log_message().
     log_message("INFO", "Kontrollerar om katalogen finns") 
 # Kontrollerar om katalogen (LOG_DIR) finns på filsystemet
@@ -178,6 +176,7 @@ def analyze_batch(batch):
 # Skapa en tom lista för att lagra larmmeddelanden
     alerts = []
 # Gå igenom alla käll-IP:er och om en IP har mer än 100 anslutningar som avsändare, skapa ett larm
+
     for ip, count in src_counter.items():
         if count > 100:
             alerts.append(f"{ip} har {count} anslutningar som källa.")
@@ -259,6 +258,10 @@ def send_email_alert(subject, body):
 # Huvudfunktion
 # Funktionen main() är programmets startpunkt där all logik kopplas ihop och exekveras
 def main():
+    
+    batch = []
+    current_window_start = None
+    current_window_end = None
 # Initiera loggning
 # Anropar funktionen setup_path() för att kontrollera att loggkatalogen (LOG_DIR) finns. Om den 
 # inte gör det skrivs ett fel och programmet avslutas
@@ -272,6 +275,48 @@ def main():
 # Skriver ut ett meddelande till konsolen så administratören vet att programmet körs
     print("Startar övervakning av loggfil...\n")        # Skriver ut att vi startar
 
+    subprocess.Popen(["python","log_gen.py"])
+    
+
+    try:
+        with open(LOG_FILE, "r") as logfile:
+            logfile.seek(0, os.SEEK_END)  # Börja läsa från slutet
+
+            while True:
+                line = logfile.readline()
+                if not line:
+                    time.sleep(1)
+                    continue
+
+                parsed = parse_log_row(line)
+                if not parsed:
+                    continue
+
+                timestamp = parsed["timestamp"]
+
+                if current_window_start is None:
+                    current_window_start = timestamp.replace(second=0, microsecond=0)
+                    current_window_end = current_window_start + datetime.timedelta(minutes=5)
+
+                if current_window_start <= timestamp < current_window_end:
+                    batch.append(parsed)
+                else:
+                    if batch:
+                        analyze_batch(batch)
+                        batch = []
+
+                    # Flytta fönstret framåt tills den täcker aktuell timestamp
+                    while timestamp >= current_window_end:
+                        current_window_start = current_window_end
+                        current_window_end = current_window_start + datetime.timedelta(minutes=5)
+
+                    batch.append(parsed)
+
+    except KeyboardInterrupt:
+        print("\nAvslutar övervakningen.")
+    except Exception as e:
+        log_message("ERROR", f"Körfel i huvudloopen: {e}")
+        print(f"[ERROR] Körfel: {e}")
     #for line in tail_log_file(LOG_FILE):                # Går igenom varje ny rad och tolkar den
      #   log_entry = parse_log_line(line)
      #   if log_entry:
