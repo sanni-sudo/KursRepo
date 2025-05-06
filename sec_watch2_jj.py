@@ -7,7 +7,7 @@ from datetime import datetime
 
 # Konfigurationer
 LOG_FILE = "Test_Monitor_Dir/network_traffic.log"
-CSV_FILE = "Test_Monitor_Dir/attack_report.csv"
+CSV_FILE = "Test_Monitor_Dir/attack_report_test.csv"
 EMAIL_RECIPIENT = "testkali@localhost"
 UFW_BLOCK_COMMAND = "sudo ufw deny from {}"
 blocked_ips = set()

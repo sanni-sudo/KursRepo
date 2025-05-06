@@ -25,7 +25,7 @@ import subprocess
 # Konfiguration
 LOG_DIR = "/home/testkali/KursRepo/Test_Monitor_Dir"
 LOG_FILE = os.path.join(LOG_DIR, "network_traffic.log")
-REPORT_FILE = os.path.join(LOG_DIR, "attack_report.csv")
+REPORT_FILE = os.path.join(LOG_DIR, "attack_report_test.csv")
 
 # Inställningar för intern/test e-post
 SMTP_SERVER = "localhost"  # Ingen autentisering

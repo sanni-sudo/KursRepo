@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 
 LOG_FILE = 'network_traffic.log'
-REPORT_FILE = 'attack_report.csv'
+REPORT_FILE = 'attack_report_test.csv'
 UNUSUAL_PORTS_LOG = 'unusual_ports.log'
 ADMIN_EMAIL = 'admin@example.com'
 SMTP_SERVER = 'smtp.example.com'

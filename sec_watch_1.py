@@ -97,12 +97,9 @@ try:
 
         with open(TRAFFIC_LOG, "r") as file:
             for line in file:
-                #match = re.search(r"\b(\d{1,5})\b", line)
                 parts = line.strip().split(",")
                 if len(parts) >= 4:
                     port = int(parts[3].strip())
-                #if match:
-                #    port = int(match.group(1))
                     if port < 1024 and port not in [22, 80,443]:
                         message = f"Hittat ovanlig port {port} i raden: {line.strip()}"
                         log_message("WARNING", message)
@@ -130,13 +127,12 @@ try:
                             #server.quit()
 
                             
-                # Låtsas att filen skriver tid, adress
-                #parts = line.split(",")
+                # Låtsas att filen skriver tid, adress               
                 if len(parts) >=2:
                     ip = parts[1]
                     connections[ip] = connections.get(ip, 0) + 1
 
-                    if connections[ip] > 5:
+                    if connections[ip] > 100:
                         message = "IP" + ip + " har för många anslutningar"
                         log_message("WARNING", message)
                         print("WARNING:", message)

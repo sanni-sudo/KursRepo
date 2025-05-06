@@ -7,7 +7,7 @@ from collections import defaultdict
 import os
 
 LOG_FILE = 'network_traffic.log'
-CSV_REPORT = 'attack_report.csv'
+CSV_REPORT = 'attack_report_test.csv'
 
 # Rensa tidigare rapport
 open(CSV_REPORT, 'w').close()
