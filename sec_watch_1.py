@@ -25,17 +25,21 @@ import time
 import re
 import csv
 import smtplib
+from email.message import EmailMessage 
 import subprocess
-from email.mime.text import MIMEText
-from email.header import Header
-from email.utils import formataddr
+#from email.mime.text import MIMEText
+#from email.header import Header
+#from email.utils import formataddr
 
 # Konfigurationer------------------------------
 
 LOG_DIR = "/home/testkali/KursRepo/Test_Monitor_Dir"
 LOG_FILE = os.path.join(LOG_DIR, "monitor.log")
 TRAFFIC_LOG = os.path.join(LOG_DIR, "network_traffic.log")
-EMAIL_FROM = "testkali@localhost"
+# För intern/test e-post
+SMTP_SERVER = "localhost"
+SMTP_PORT = 25
+EMAIL_FROM = "testkali@testkalilinuxcl-2.labb.local"
 EMAIL_TO = "testkali@localhost"
 
 
@@ -56,6 +60,24 @@ def log_message(level, message):
         logging.warning(message)
     elif level == "ERROR":
         logging.error(message)
+
+# Funktioner---------------------------
+def send_email_alert(subject, body):
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = subject
+        msg["From"] = EMAIL_FROM
+        msg["To"] = EMAIL_TO
+        msg.set_content(body)
+
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.send_message(msg)
+
+        log_message("INFO", "Skickade e-postvarning")
+        print("E-postvarning skickad!")
+    except Exception as e:
+        log_message("ERROR", f"Kunde inte skicka epost: {str(e)}")
+        print("ERROR: Kunde inte skicka epostvarning:", str(e))
 
 # Validering---------------------------
 setup_logging()
@@ -85,22 +107,30 @@ try:
                         message = f"Hittat ovanlig port {port} i raden: {line.strip()}"
                         log_message("WARNING", message)
                         print("WARNING: ", message)
-                        try:
-                            msg = MIMEText("Misstänkt/a port/ar under 1024 upptäckt/a i trafiken", "plain", "utf-8")
-                            msg["From"] = formataddr((str(Header("Nätverksövervakning", "utf-8")), EMAIL_FROM))
-                            msg["To"] = EMAIL_TO
-                            msg["Subject"] = Header("Nätverksvarning", "utf-8")
 
-                            server = smtplib.SMTP("localhost", 25)
-                            server.sendmail(EMAIL_FROM, [EMAIL_TO], msg.as_string())
-                            server.quit()
+                        send_email_alert(
+    subject="IDS-varning: Misstänkt port upptäckt",
+    body=f"Port {port} upptäcktes i följande rad:\n{line.strip()}"
+)                   
+                        #try:
+                            #server = smtplib.SMTP("localhost", 25)
+                            #server.sendmail(
+                            #    EMAIL_FROM,
+                            #    EMAIL_TO,
+                            #    "Subject: Nätverksvarning\n\nMisstänkt port hittad!"
+                            #)
 
-                            log_message("INFO", "Skickade e-postvarning")
-                            print("Skickade e-post")
-                        except Exception as e:
-                            log_message("ERROR", f"Kunde inte skicka epost: {str(e)}")
-                            print("ERROR: Kunde inte skicka epostvarning:", str(e))
-                # Låtsas att filen skriver tid, adresss
+                           #msg = MIMEText("Misstänkt/a port/ar under 1024 upptäckt/a i trafiken", "plain", "utf-8")
+                            #msg["From"] = formataddr((str(Header("Nätverksövervakning", "utf-8")), EMAIL_FROM))
+                            #msg["To"] = EMAIL_TO
+                            #msg["Subject"] = Header("Nätverksvarning", "utf-8")
+
+                            #server = smtplib.SMTP("localhost", 25)
+                            #server.sendmail(EMAIL_FROM, [EMAIL_TO], msg.as_string())
+                            #server.quit()
+
+                            
+                # Låtsas att filen skriver tid, adress
                 #parts = line.split(",")
                 if len(parts) >=2:
                     ip = parts[1]
