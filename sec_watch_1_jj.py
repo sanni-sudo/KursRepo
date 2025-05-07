@@ -5,7 +5,7 @@
 # Läsa Nätverkslogg
 # Flagga vid misstänkt portanvändning
 # Räkna IP-anslutningar
-# # Skicka e-post
+# Skicka e-post
 # Spara rapport
 # Simulera IP-blockering
 # 
