@@ -28,9 +28,6 @@ import smtplib
 from email.message import EmailMessage 
 from datetime import datetime, timedelta
 import subprocess
-#from email.mime.text import MIMEText
-#from email.header import Header
-#from email.utils import formataddr
 
 # Konfigurationer------------------------------
 
@@ -95,17 +92,17 @@ def block_ufw(IP):
             text=True,
             check=True
         )
-        print(f"✅ Blockerade IP: {IP}")
-        log_message(f"INFO", "Blockerade IP:{IP} med UFW")
+        print(f"Blockerade IP: {IP}")
+        log_message("INFO", f"Blockerade IP:{IP} med UFW")
     except subprocess.CalledProcessError as e:
-        print(f"❌ Kunde inte blockera IP {IP}: {e.stderr}")
-        log_message(f"Kunde inte blockera IP {IP}: {e.stderr}")
-    try:
-        result = subprocess.run(["sudo", "ufw", "deny"], capture_output=True, text=True)
-        log_message("INFO", "Blockerade IP med UFW")
-    except:
-        log_message("ERROR", "Kunde inte blockera IP")
-        print("Kunde inte köra block-kommandot!")
+        print(f"Kunde inte blockera IP {IP}: {e.stderr}")
+        log_message("ERROR" f"Kunde inte blockera IP {IP}: {e.stderr}")
+#    try:
+#        result = subprocess.run(["sudo", "ufw", "deny"], capture_output=True, text=True)
+#        log_message("INFO", "Blockerade IP med UFW")
+#    except:
+#        log_message("ERROR", "Kunde inte blockera IP")
+#        print("Kunde inte köra block-kommandot!")
 
 
 # Validering---------------------------
@@ -142,6 +139,7 @@ try:
                     message = f"Hittat ovanlig port {port} i raden: {line.strip()}"
                     log_message("WARNING", message)
                     print("WARNING: ", message)
+                    
                     send_email_alert(
                     subject="IDS-varning: Misstänkt port upptäckt",
                     body=f"Port {port} upptäcktes i följande rad:\n{line.strip()}")                   
