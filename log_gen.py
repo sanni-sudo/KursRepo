@@ -35,20 +35,20 @@ def generate_log_line():
     
     return f"{now}, {src_ip}, {dest_ip}, {port}, {protocol}"
 
-# Skapa och fyll loggfilen i max 15 minuter
+# Skapa och fyll loggfilen i max 30 minuter
 def main():
     open(LOG_FILE, "w").close()
     print("Startar logggenerering i 30 minuter...")
     print(f"Stattid:", datetime.now())
     start_time = time.time()
-    end_time = start_time + 30 * 60  # 15 minuter = 900 sekunder
+    end_time = start_time + 30 * 60  # 30 minuter = 1800 sekunder
 
     with open(LOG_FILE, "a") as log_file:
         while time.time() < end_time:
             line = generate_log_line()
             log_file.write(line + "\n")
             log_file.flush()
-            time.sleep(0.5)  # 4 rader per sekund ≈ 1800 rader totalt
+            time.sleep(0.5)  
 
     print("Logggenerering avslutad efter 30 minuter.")
 
