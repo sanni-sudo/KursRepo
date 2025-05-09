@@ -1,0 +1,39 @@
+2025-04-07 17:38:47 [ERROR] Ingen katalog angiven. Använd: ./file_sentry.sh <katalog>
+2025-04-07 17:39:01 [ERROR] INFO är inte en katalog
+2025-04-07 18:10:48 [ERROR] Ingen katalog angiven. Använd: ./file_sentry.sh <katalog>
+2025-04-07 18:53:56 [ERROR] /fake/path är inte en katalog
+2025-04-07 20:03:53 [INFO] Skannar test_dir för misstänkta filer...
+2025-04-07 20:03:53 [WARNING] Stor fil:test_dir/big_file.txt (2097152 bytes)
+2025-04-07 20:03:53 [INFO] Skanning klar.
+2025-04-07 20:08:35 [INFO] Skannar test_dir för misstänkta filer...
+2025-04-07 20:08:35 [WARNING] Stor fil:test_dir/big_file.txt (2097152 bytes)
+2025-04-07 20:08:35 [INFO] Skanning klar.
+2025-04-07 20:09:12 [INFO] Skannar ./test_dir för misstänkta filer...
+2025-04-07 20:09:12 [WARNING] Stor fil:./test_dir/big_file.txt (2097152 bytes)
+2025-04-07 20:09:12 [INFO] Skanning klar.
+2025-04-08 11:48:20 [INFO] Skannar test_dir för misstänkta filer...
+2025-04-08 11:48:20 [WARNING] Stor fil:test_dir/big_file.txt (2097152 bytes)
+2025-04-08 11:48:20 [WARNING] Körbar fil: test_dir/testvscode1.sh (-rwxrwxr-x)
+2025-04-08 11:48:20 [WARNING] Körbar fil: test_dir/script_test.sh (-rwxr-xr-x)
+2025-04-08 11:48:20 [INFO] Skanning klar.
+2025-04-08 11:52:42 [INFO] Skannar test_dir för misstänkta filer...
+2025-04-08 11:52:42 [WARNING] Stor fil:test_dir/big_file.txt (2097152 bytes)
+2025-04-08 11:52:42 [WARNING] Körbar fil: test_dir/testvscode1.sh (-rwxrwxr-x)
+2025-04-08 11:52:42 [WARNING] Körbar fil: test_dir/script_test.sh (-rwxr-xr-x)
+2025-04-08 11:52:42 [INFO] Skanning klar.
+2025-04-09 12:38:39 [ERROR] Ingen katalog angiven. Använd: ./file_sentry.sh <katalog>
+2025-04-09 13:02:51 [ERROR] Ingen katalog angiven. Använd: ./file_sentry.sh <katalog>
+2025-04-09 15:41:58 [INFO] Skannar test_dir för misstänkta filer...
+2025-04-09 15:41:58 [WARNING] Stor fil:test_dir/big_file.txt (2097152 bytes)
+2025-04-09 15:41:58 [WARNING] Körbar fil: test_dir/testvscode1.sh (-rwxrwxr-x)
+2025-04-09 15:41:58 [WARNING] Körbar fil: test_dir/script_test.sh (-rwxr-xr-x)
+2025-04-09 15:41:58 [INFO] Skanning klar.
+2025-04-09 16:15:41 [INFO] Skannar test_dir för misstänkta filer...
+2025-04-09 16:15:41 [WARNING] Stor fil:test_dir/big_file.txt (2097152 bytes)
+2025-04-09 16:15:41 [WARNING] Körbar fil: test_dir/testvscode1.sh (-rwxrwxr-x)
+2025-04-09 16:15:41 [WARNING] Körbar fil: test_dir/script_test.sh (-rwxr-xr-x)
+2025-04-09 16:15:41 [INFO] Skanning klar.
+2025-04-09 16:35:03 [INFO] Skannar test_dir för misstänkta filer...
+2025-04-09 16:35:04 [WARNING] Stor fil:test_dir/big_file.txt (2097152 bytes)
+2025-04-09 16:39:39 [INFO] Skannar test_dir för misstänkta filer...
+2025-04-09 16:39:39 [WARNING] Stor fil:test_dir/big_file.txt (2097152 bytes)

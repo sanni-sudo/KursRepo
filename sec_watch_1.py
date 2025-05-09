@@ -4,7 +4,7 @@
 # realtid och kan vidta åtgärder vid misstänkta attacker.
   
 # Krav:
-# -> Läsa loggfilen med tid, src, dest, IP, port och protokoll
+# -> Läsa loggfilen med tid, IP, port och protokoll i 5-minuters intervaller
 # -> Flagga anslutningar till ovanliga portar och IPn med fler än 100 anslutningar
 # -> Skicka e-postvarningar vid upptäckta händelser
 # -> Spara en CSV-rapport med fynden
@@ -36,21 +36,21 @@ EMAIL_TO = "testkali@localhost"                             # Mottagaradress
 
 # Loggningsfunktioner---------------------------
 
-def setup_logging():                # Funktion som sätter upp loggning
-    logging.basicConfig(            
-        filename=LOG_FILE,
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+def setup_logging():                # Funktion som konfigurerar loggning
+    logging.basicConfig(            # Konfigurerar loggning          
+        filename=LOG_FILE,          # Loggfilens namn
+        level=logging.INFO,         # Loggnivå
+        format="%(asctime)s [%(levelname)s] %(message)s",   # Loggformat
+        datefmt="%Y-%m-%d %H:%M:%S" # Datumformat
     )
 
 def log_message(level, message):    # Funktion som loggar meddelanden på olika nivåer(INFO, WARNING, ERROR)
-    if level == "INFO":
-        logging.info(message)
-    elif level == "WARNING":
-        logging.warning(message)
-    elif level == "ERROR":
-        logging.error(message)
+    if level == "INFO":             # Om loggnivån är INFO
+        logging.info(message)       # Logga meddelandet som INFO
+    elif level == "WARNING":        # Om loggnivån är WARNING
+        logging.warning(message)    # Logga meddelandet som WARNING
+    elif level == "ERROR":          # Om loggnivån är ERROR
+        logging.error(message)      # Logga meddelandet som ERROR
 
 # Funktioner---------------------------
 
@@ -78,8 +78,7 @@ def extract_timestamp(line):            # Funktion som extraherar tidsstämpel f
         return datetime.strptime(parts[0].strip(), "%Y-%m-%d %H:%M:%S")     # Konvertera till datetime-objekt
     return None                # Om ingen tidsstämpel hittades, returnera None  
 
-def cleanup():                          
-    # Funktion som rensar loggfilen och CSV-filen
+def cleanup():                 # Funktion som rensar tidigare logg- och CSV-filer                         
     # Om filen inte finns skapas den
     with open(LOG_FILE, "w") as file:       # Öppnar loggfilen för skrivning      
         print(f"Rensar loggfilen: {LOG_FILE}")  # Skriver ut meddelande om att loggfilen rensas     
@@ -130,22 +129,22 @@ try:
     connections = {}        # Ordbok för att lagra IP-adresser och deras anslutningar
     with open(TRAFFIC_LOG, "r") as file:    # Öppnar loggfilen för läsning
         start_time = None       # Starttid för övervakning
-        ok_con =  0     # Antal godkända anslutningar
-        susp_port = 0   # Antal misstänkta portar
-        many_con = []   # Lista för att lagra IP-adresser med många anslutningar
-        lines = 0   # Antal rader i loggfilen
-        for line in file:       # Loopar igenom varje rad i loggfilen
-            parts = line.strip().split(",")   # Dela upp raden i delar
+        ok_con =  0         # Antal godkända anslutningar
+        susp_port = 0       # Antal misstänkta portar
+        many_con = []       # Lista för att lagra IP-adresser med många anslutningar
+        lines = 0           # Antal rader i loggfilen
+        for line in file:           # Loopar igenom varje rad i loggfilen
+            parts = line.strip().split(",")          # Dela upp raden i delar
             current_time = extract_timestamp(line)   # Extrahera tidsstämpel
-            lines += 1      # Öka antalet rader
+            lines += 1              # Öka antalet rader
             if not current_time:    # Om ingen tidsstämpel hittades, hoppa över raden
-                continue    # Hoppa över raden
-            if not start_time:   # Om starttid inte är satt, sätt den till nuvarande tid
-                start_time = current_time   # Sätt starttid
-                print("Starttid:", start_time)  # Skriver ut starttid
-            if (current_time - start_time) >= timedelta(minutes=5): # Om 5 minuter har passerat
+                continue            # Hoppa över raden
+            if not start_time:      # Om starttid inte är satt, sätt den till nuvarande tid
+                start_time = current_time           # Sätt starttid
+                print("Starttid:", start_time)      # Skriver ut starttid
+            if (current_time - start_time) >= timedelta(minutes=5):    # Om 5 minuter har passerat
                 print("5 minuter har passerat.")    # Skriver ut meddelande
-                start_time = current_time   # Sätt ny starttid
+                start_time = current_time           # Sätt ny starttid
                 log_message("INFO", f"Pausar 20 sekunder. Ny starttid:  {start_time}")  
                 # Loggar ny starttid                
                 log_message("INFO", "Statistik för de senaste 5 minuterna")
@@ -172,29 +171,29 @@ try:
                     print(f"IP {ip} har fler än 100 anslutningar")  # Skriver ut meddelande
                     log_message("WARNING", f"IP {ip} har fler än 100 anslutningar") # Loggar meddelande
                 with open(CSV_FILE, "a") as file:   # Öppnar CSV-filen för skrivning
-                    file.write("IP, Antal\n")   # Skriver rubriker i CSV-filen
+                    file.write("IP, Antal\n")       # Skriver rubriker i CSV-filen
                     for ip, count in connections.items():   # Loopar igenom varje IP-adress och dess antal
                         file.write(ip + "," + str(count) + "\n")    # Skriver IP-adress och antal i CSV-filen
-                        file.flush()            # Tömmer bufferten        
-                ok_con = 0       # Nollställer antalet godkända anslutningar    
-                susp_port = 0    # Nollställer antalet misstänkta portar
-                many_con = []   # Nollställer listan med många anslutningar
-                time.sleep(20)  # Pausar i 20 sekunder
+                        file.flush()                # Tömmer bufferten        
+                ok_con = 0          # Nollställer antalet godkända anslutningar    
+                susp_port = 0       # Nollställer antalet misstänkta portar
+                many_con = []       # Nollställer listan med många anslutningar
+                time.sleep(20)      # Pausar i 20 sekunder
 
-            if len(parts) >= 4: # Om det finns minst 4 delar i raden
-                port = int(parts[3].strip())    # Extrahera portnumret
+            if len(parts) >= 4:     # Om det finns minst 4 delar i raden
+                port = int(parts[3].strip())        # Extrahera portnumret
                 if port < 1024 and port not in [22, 80,443]:    # Om portnumret är mindre än 1024 och inte är en vanlig port
                     message = f"Hittat ovanlig port {port} i raden: {line.strip()}" # Skapa meddelande
-                    log_message("WARNING", message)  # Logga meddelandet
-                    print("WARNING: ", message)        # Skriver ut meddelande
-                    susp_port += 1                      #  Öka räknaren för misstänkta portar
+                    log_message("WARNING", message)     # Logga meddelandet
+                    print("WARNING: ", message)         # Skriver ut meddelande
+                    susp_port += 1                      # Öka räknaren för misstänkta portar
                     
-                    send_email_alert(   # Skicka e-postvarning          
+                    send_email_alert(       # Skicka e-postvarning          
                     subject="IDS-varning: Misstänkt port upptäckt", # Ämnet för e-postvarningen
                     body=f"Port {port} upptäcktes i följande rad:\n{line.strip()}")     
                     # Innehållet i e-postvarningen                  
                 else:
-                    ok_con += 1     # Öka räknaren för godkända anslutningar                                                                                   
+                    ok_con += 1             # Öka räknaren för godkända anslutningar                                                                                   
             
             # Låtsas att filen skriver tid, adress               
             if len(parts) >=2:      # Om det finns minst 2 delar i raden
@@ -205,7 +204,7 @@ try:
                     many_con.append(ip)         # Lägg till IP-adressen i listan med många anslutningar
                     message = "IP" + ip + " har för många anslutningar"     # Skapa meddelande
                     log_message("WARNING", message)     # Logga meddelandet
-                    print("WARNING:", message)      # Skriver ut meddelande
+                    print("WARNING:", message)          # Skriver ut meddelande
                     
                     block_ufw(ip.strip())   # Blockera IP-adressen med UFW  
                     
@@ -214,14 +213,14 @@ try:
                     body=f"IP-adress: {ip} har fler än 100 anslutingar under senaste 5 minuters perioden. Blockerar med UFW")   
                     # Innehållet i e-postvarningen                  
 
-    log_message("INFO", "Sparade rapporten")    # Loggar att rapporten sparades
+    log_message("INFO", "Sparade rapporten")        # Loggar att rapporten sparades
     print("IP-rapport har sparats på systemet!")    # Skriver ut meddelande om att rapporten sparades
-    log_message("INFO", "Klar med kontrollen")   # Loggar att övervakningen är klar
-    print("Klar med  kontroll av loggfilen")    # Skriver ut meddelande om att övervakningen är klar
+    log_message("INFO", "Klar med kontrollen")      # Loggar att övervakningen är klar
+    print("Klar med  kontroll av loggfilen")        # Skriver ut meddelande om att övervakningen är klar
     log_message("INFO", "Loggfilen kontrollerad")   # Loggar att loggfilen kontrollerades
-except Exception as e:   # Om något oväntat händer i koden (fel, krasch osv) loggas
+except Exception as e:                      # Om något oväntat händer i koden (fel, krasch osv) loggas
     # ett felmeddelande och programmet avslutas
-    log_message("ERROR", "Något gick fel!")   # Loggar felmeddelande
+    log_message("ERROR", "Något gick fel!")         # Loggar felmeddelande
     exit(1)                      
 
 

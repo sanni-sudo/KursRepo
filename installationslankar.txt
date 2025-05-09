@@ -1,0 +1,21 @@
+# Installera VS Code på Kali Linux
+curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+sudo apt-add-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
+sudo apt-get update
+sudo apt-get install code
+wget -O vscode.deb "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64"
+Detta laddar ner den senaste .deb-filen från Microsofts officiella sida.
+
+Kör följande kommando för att installera paketet 
+sudo dpkg -i vscode.deb
+
+Om installationen misslyckas på grund av saknade beroenden, kör
+sudo apt --fix-broken install
+
+Starta VS Code genom att skriva:
+code
+
+Kontrollera att VS Code är installerat:
+code --version
+
+
