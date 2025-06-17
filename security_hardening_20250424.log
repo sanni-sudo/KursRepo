@@ -1,5 +1,0 @@
-2025-04-24 18:48:42 [INFO] Loggfilen tömd
-2025-04-24 18:48:43 [INFO] Ledigt utrymme är under 70%. Flyttar temporära filer...
-2025-04-24 18:48:43 [INFO] Flyttade: C:\Windows\Temp\testdok1.txt till C:\TempBackup\testdok1.txt
-2025-04-24 18:48:43 [INFO] Flyttade: C:\Windows\Temp\testdok2.txt till C:\TempBackup\testdok2.txt
-2025-04-24 18:48:43 [INFO] Flytt av temporära filer slutförd.
